@@ -128,9 +128,9 @@ class TrainGame:
 
         if moved:
             self.add_random_tile()
+            self.stuck_counter = 0
             if not self.moves_available():
                 self.over = True
-                self.stuck_counter = 0
         else:
             self.score -= 20
             self.reward -= 20

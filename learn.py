@@ -24,10 +24,16 @@ model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=logdir)
 def show_game(ml_model: PPO):
     """Show game based off current model."""
     show_game = RenderGame()
-    while not show_game.is_game_terminated():
-        observation = prepare_array(show_game.get_array())
+    stuck_counter = 0
+    observation = prepare_array(show_game.get_array())
+    while stuck_counter < 5 and not show_game.is_game_terminated():
         direction = ml_model.predict(observation)[0]
         show_game.move(direction)
+        new_observation = prepare_array(show_game.get_array())
+        if (new_observation == observation).all():
+            stuck_counter += 1
+        else:
+            stuck_counter = 0
     show_game.quit()
 
 
