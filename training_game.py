@@ -133,7 +133,7 @@ class TrainGame:
                 self.over = True
         else:
             self.score -= 20
-            self.reward -= 20
+            self.reward = -20
             self.stuck_counter += 1
 
     def build_traversals(self, vector: tuple[int, int]):
