@@ -21,7 +21,7 @@ class GameEnvironment(gym.Env):
         super(GameEnvironment, self).__init__()
         # Define action and observation space
         # They must be gym.spaces objects
-        self.game = RenderGame()
+        self.game = TrainGame(4)
         self.done = False
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Box(
@@ -33,15 +33,14 @@ class GameEnvironment(gym.Env):
         """Action is int between 0 and 3"""
         self.game.move(action)
         observation = prepare_array(self.game.get_array()).astype(np.float32)
-        self.reward = self.game.get_score()
+        self.reward = self.game.score
         self.done = self.game.is_game_terminated()
         info = {}
         return observation, self.reward, self.done, info
 
     def reset(self):
         self.done = False
-        self.game.quit()
-        self.game = RenderGame()
+        self.game.restart()
         self.reward = 0
         # reset everything
         observation = prepare_array(self.game.get_array()).astype(np.float32)
