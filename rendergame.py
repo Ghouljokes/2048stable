@@ -97,7 +97,7 @@ class RenderGame:
 
     def move(self, direction: int):
         """Move all tiles in given direction."""
-        directions = [Keys.LEFT, Keys.DOWN, Keys.RIGHT, Keys.UP]
+        directions = [Keys.UP, Keys.RIGHT, Keys.DOWN, Keys.LEFT]
         self.body.send_keys(directions[direction])
 
     def is_game_terminated(self):

@@ -91,7 +91,7 @@ class TrainGame:
             direction (int): Integer representation of a direction.
         """
         # 0: up, 1: right, 2: down, 3: left
-        self.reward = 2
+        self.reward = 5
         if self.is_game_terminated():
             return
         vector = self.dir_vectors[direction]
@@ -132,8 +132,8 @@ class TrainGame:
             if not self.moves_available():
                 self.over = True
         else:
-            self.score -= 20
-            self.reward = -20
+            self.score -= 10
+            self.reward = -10
             self.stuck_counter += 1
 
     def build_traversals(self, vector: tuple[int, int]):
