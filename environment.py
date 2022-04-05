@@ -33,7 +33,7 @@ class GameEnvironment(gym.Env):
         """Action is int between 0 and 3"""
         self.game.move(action)
         observation = prepare_array(self.game.get_array()).astype(np.float32)
-        self.reward = self.game.score
+        self.reward = self.game.reward
         self.done = self.game.is_game_terminated()
         info = {}
         return observation, self.reward, self.done, info

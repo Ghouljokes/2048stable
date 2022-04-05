@@ -12,6 +12,8 @@ class TrainGame:
         """Initiate game on board of dims size x size"""
         self.size = size
         self.start_tiles = 2
+        self.score = 0
+        self.reward = 0
         self.keep_playing = False
         self.stuck_counter = 0
         self.over = False
@@ -40,6 +42,7 @@ class TrainGame:
         """Set up new game."""
         self.grid = Grid(self.size)
         self.score = 0
+        self.reward = 0
         self.stuck = False
         self.over = False
         self.won = False
@@ -88,6 +91,7 @@ class TrainGame:
             direction (int): Integer representation of a direction.
         """
         # 0: up, 1: right, 2: down, 3: left
+        self.reward = 0
         if self.is_game_terminated():
             return
         vector = self.dir_vectors[direction]
@@ -113,6 +117,7 @@ class TrainGame:
                     self.grid.remove_tile(tile)
                     tile.update_position(positions["next"])
                     self.score += merged.value
+                    self.reward += merged.value
                     if merged.value == 2048:
                         self.won = True
                 else:
@@ -127,7 +132,8 @@ class TrainGame:
                 self.over = True
                 self.stuck_counter = 0
         else:
-            self.score -= 10
+            self.score -= 20
+            self.reward -= 20
             self.stuck_counter += 1
 
     def build_traversals(self, vector: tuple[int, int]):
