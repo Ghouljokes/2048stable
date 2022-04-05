@@ -6,8 +6,8 @@ from environment import GameEnvironment, prepare_array
 from rendergame import RenderGame
 
 
-models_dir = f"models/PPO-{int(time.time())}"
-logdir = f"logs/PPO-{int(time.time())}"
+models_dir = "models/PPO"
+logdir = "logs/PPO"
 
 if not os.path.exists(models_dir):
     os.makedirs(models_dir)
@@ -34,6 +34,7 @@ def show_game(ml_model: PPO):
             stuck_counter += 1
         else:
             stuck_counter = 0
+        observation = new_observation
     show_game.quit()
 
 
