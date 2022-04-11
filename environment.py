@@ -10,7 +10,7 @@ def prepare_array(array: np.ndarray) -> np.ndarray:
     np.seterr(divide="ignore")
     logged_array = np.log2(array)
     logged_array = np.maximum(0, logged_array)
-    logged_array /= np.max(logged_array)
+    logged_array /= 16
     return logged_array
 
 
