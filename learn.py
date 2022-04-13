@@ -20,6 +20,11 @@ env.reset()
 
 model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=logdir)
 
+def count_models():
+    """Count how many models are in models directory"""
+    files_list = next(os.walk(models_dir))[2]
+    return len(files_list)
+
 
 def show_game(ml_model: PPO):
     """Show game based off current model."""
@@ -39,7 +44,7 @@ def show_game(ml_model: PPO):
 
 
 TIMESTEPS = 50000
-for i in range(1, 1000000000):
+for i in range(count_models() + 1, 1000000000):
     model.learn(total_timesteps=TIMESTEPS, tb_log_name="PPO", reset_num_timesteps=False)
     model.save(f"{models_dir}/{TIMESTEPS*i}")
     show_game(model)

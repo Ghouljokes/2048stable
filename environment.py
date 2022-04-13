@@ -7,11 +7,12 @@ import numpy as np
 
 def prepare_array(array: np.ndarray) -> np.ndarray:
     """Perform log2 on each value of array."""
-    np.seterr(divide="ignore")
-    logged_array = np.log2(array)
-    logged_array = np.maximum(0, logged_array)
-    logged_array /= 16
-    return logged_array
+    hot_vectors = np.zeros((16, 16))
+    for i, num in enumerate(array):
+        hot_position = int(np.log2(num)) if num != 0 else 0
+        hot_vectors[i][hot_position] = 1
+    return hot_vectors
+        
 
 
 class GameEnvironment(gym.Env):
@@ -25,7 +26,7 @@ class GameEnvironment(gym.Env):
         self.done = False
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Box(
-            low=0, high=1, shape=(16,), dtype=np.float32
+            low=0, high=1, shape=(16, 16), dtype=np.float32
         )
         self.reward = 0
 
