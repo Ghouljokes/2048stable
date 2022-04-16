@@ -98,9 +98,6 @@ class TrainGame:
         self.grid.cells[cell[0]][cell[1]] = tile
         tile.update_position(cell)
 
-    def shuffle(self):
-        for grid_row in self.grid.cells:
-
             
     def move(self, direction: int):
         """Move all tiles in a given direction.
