@@ -5,14 +5,13 @@ from rendergame import RenderGame
 import numpy as np
 
 
-def prepare_array(array: np.ndarray) -> np.ndarray:
+def prepare_array(array: np.ndarray):
     """Perform log2 on each value of array."""
     hot_vectors = np.zeros((16, 16))
     for i, num in enumerate(array):
         hot_position = int(np.log2(num)) if num != 0 else 0
         hot_vectors[i][hot_position] = 1
     return hot_vectors
-        
 
 
 class GameEnvironment(gym.Env):

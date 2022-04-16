@@ -64,8 +64,7 @@ class Grid:
 
     def within_bounds(self, position: tuple):
         """Check to see if given position is within bounds of grid."""
-        return position[0] in range(self.size) and\
-            position[1] in range(self.size)
+        return position[0] in range(self.size) and position[1] in range(self.size)
 
     def readable_grid(self):
         """Make readable version of the grid."""

@@ -98,7 +98,6 @@ class TrainGame:
         self.grid.cells[cell[0]][cell[1]] = tile
         tile.update_position(cell)
 
-            
     def move(self, direction: int):
         """Move all tiles in a given direction.
         Args:
@@ -153,7 +152,7 @@ class TrainGame:
 
     def build_traversals(self, vector: tuple[int, int]):
         """Build lists indicating how to traverse through grid."""
-        traversals = {"row": [], "col": []}
+        traversals: dict[str, list[int]] = {"row": [], "col": []}
         for pos in range(self.size):
             traversals["row"].append(pos)
             traversals["col"].append(pos)
