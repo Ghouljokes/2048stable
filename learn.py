@@ -45,7 +45,7 @@ def show_game(ml_model: PPO):
 
 
 TIMESTEPS = 50000
-for i in range(1481, 1000000000):
+for i in range(1, 1000000000):
     model.learn(total_timesteps=TIMESTEPS, tb_log_name="PPO", reset_num_timesteps=False)
     model.save(f"{models_dir}/{TIMESTEPS*i}")
     #show_game(model)
