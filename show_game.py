@@ -5,7 +5,7 @@ from environment import GameEnvironment, prepare_array
 env = GameEnvironment()
 env.reset()
 
-model = PPO.load("models/PPO/14850000.zip", env, verbose=1)
+model = PPO.load("models/PPO/68500000.zip", env, verbose=1)
 
 
 def show_game(ml_model: PPO):

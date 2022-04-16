@@ -26,16 +26,26 @@ class TrainGame:
         }
         self.set_up()
 
-    def add_random_tile(self):
+    def add_starting_tile(self):
         """Add a 2 or 4 to a random spot on the grid."""
         if self.grid.amount_empty():
             value = 2 if random.random() < 0.9 else 4
             tile = Tile(self.grid.random_available_cell(), value)
             self.grid.insert_tile(tile)
 
+    def add_random_tile(self):
+        if self.grid.amount_empty():
+            value = 2 ** random.randint(1, 10)
+            tile = Tile(self.grid.random_available_cell(), value)
+            self.grid.insert_tile(tile)
+
     def add_start_tiles(self):
         """Add the starting tiles."""
         for _ in range(self.start_tiles):
+            self.add_starting_tile()
+
+    def add_random_tiles(self):
+        for _ in range(6):
             self.add_random_tile()
 
     def set_up(self):
@@ -48,7 +58,10 @@ class TrainGame:
         self.won = False
         self.keep_playing = False
         self.stuck_counter = 0
-        self.add_start_tiles()
+        if random.random() < 0.7:
+            self.add_start_tiles()
+        else:
+            self.add_random_tiles()
 
     def restart(self):
         """Reset game."""
@@ -85,6 +98,10 @@ class TrainGame:
         self.grid.cells[cell[0]][cell[1]] = tile
         tile.update_position(cell)
 
+    def shuffle(self):
+        for grid_row in self.grid.cells:
+
+            
     def move(self, direction: int):
         """Move all tiles in a given direction.
         Args:
@@ -120,6 +137,7 @@ class TrainGame:
                     self.reward += merged.value
                     if merged.value == 2048:
                         self.won = True
+                        self.set_keep_playing()
                 else:
                     self.move_tile(tile, positions["furthest"])
 

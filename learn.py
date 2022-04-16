@@ -18,7 +18,8 @@ if not os.path.exists(logdir):
 env = GameEnvironment()
 env.reset()
 
-model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=logdir)
+#model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=logdir)
+model = PPO.load(models_dir + "/55500000.zip", env, verbose=1, tensorboard_log=logdir)
 
 def count_models():
     """Count how many models are in models directory"""
@@ -44,7 +45,7 @@ def show_game(ml_model: PPO):
 
 
 TIMESTEPS = 50000
-for i in range(count_models() + 1, 1000000000):
+for i in range(1481, 1000000000):
     model.learn(total_timesteps=TIMESTEPS, tb_log_name="PPO", reset_num_timesteps=False)
     model.save(f"{models_dir}/{TIMESTEPS*i}")
-    show_game(model)
+    #show_game(model)
