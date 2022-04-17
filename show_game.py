@@ -1,14 +1,14 @@
-from stable_baselines3 import PPO
+from stable_baselines3 import DQN
 from rendergame import RenderGame
 from environment import GameEnvironment, prepare_array
 
 env = GameEnvironment()
 env.reset()
 
-model = PPO.load("models/PPO/68500000.zip", env, verbose=1)
+model = DQN.load("models/DQN/150000.zip", env, verbose=1)
 
 
-def show_game(ml_model: PPO):
+def show_game(ml_model: DQN):
     """Show game based off current model."""
     show_game = RenderGame()
     stuck_counter = 0
