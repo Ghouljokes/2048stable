@@ -40,7 +40,7 @@ class GameEnvironment(gym.Env):
 
     def reset(self):
         self.done = False
-        self.game.restart()
+        self.game.start_new()
         self.reward = 0
         # reset everything
         observation = prepare_array(self.game.get_array()).astype(np.float32)

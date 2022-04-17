@@ -24,20 +24,18 @@ class TrainGame:
             2: (1, 0),  # down
             3: (0, -1),  # left
         }
-        self.set_up()
+        self.start_new()
 
     def add_starting_tile(self):
         """Add a 2 or 4 to a random spot on the grid."""
-        if self.grid.amount_empty():
-            value = 2 if random.random() < 0.9 else 4
-            tile = Tile(self.grid.random_available_cell(), value)
-            self.grid.insert_tile(tile)
+        value = 2 if random.random() < 0.9 else 4
+        tile = Tile(self.grid.random_available_cell(), value)
+        self.grid.insert_tile(tile)
 
     def add_random_tile(self):
-        if self.grid.amount_empty():
-            value = 2 ** random.randint(2, 6)
-            tile = Tile(self.grid.random_available_cell(), value)
-            self.grid.insert_tile(tile)
+        value = 2 ** random.randint(2, 6)
+        tile = Tile(self.grid.random_available_cell(), value)
+        self.grid.insert_tile(tile)
 
     def add_start_tiles(self):
         """Add the starting tiles."""
@@ -48,7 +46,7 @@ class TrainGame:
         for _ in range(8):
             self.add_random_tile()
 
-    def set_up(self):
+    def start_new(self):
         """Set up new game."""
         self.grid = Grid(self.size)
         self.score = 0
@@ -60,19 +58,9 @@ class TrainGame:
         self.stuck_counter = 0
         self.add_start_tiles()
 
-    def restart(self):
-        """Reset game."""
-        self.set_up()
-
-    def set_keep_playing(self):
-        """Continue game."""
-        self.keep_playing = True
-
     def is_game_terminated(self):
         """Check if the game has ended."""
-        if self.over or (self.won and not self.keep_playing) or self.stuck_counter > 5:
-            return True
-        return False
+        return self.over or self.stuck_counter > 5
 
     def prepare_tiles(self):
         """Prepare tiles to be moved."""
@@ -81,9 +69,9 @@ class TrainGame:
                 if tile:
                     tile.merged_from = None
 
-    def positions_equal(self, position, tile: Tile):
+    def positions_equal(self, position: tuple[int, int], tile: Tile):
         """Check to see if a position is the same as a tile's position."""
-        return position[0] == tile.pos[0] and position[1] == tile.pos[1]
+        return position == tile.pos
 
     def move_tile(self, tile: Tile, cell: tuple[int, int]):
         """Move a tile to a given position.
@@ -130,7 +118,7 @@ class TrainGame:
                     self.reward += merged.value
                     if merged.value == 2048:
                         self.won = True
-                        self.set_keep_playing()
+                        self.keep_playing = True
                 else:
                     self.move_tile(tile, positions["furthest"])
 
