@@ -101,7 +101,7 @@ class TrainGame:
             direction (int): Integer representation of a direction.
         """
         # 0: up, 1: right, 2: down, 3: left
-        self.reward = 5
+        self.reward = -5
         if self.is_game_terminated():
             return
         vector = self.dir_vectors[direction]
