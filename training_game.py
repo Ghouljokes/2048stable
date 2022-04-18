@@ -110,7 +110,7 @@ class TrainGame:
             current_array[12],
             current_array[15],
         ]
-        max = np.max(self.get_array())
+        max = np.max(current_array)
         if max in corners:  # Reward ai for having maximum tile in a corner.
             self.reward += max
         if moved:
