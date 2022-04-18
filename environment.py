@@ -1,8 +1,8 @@
+"""Environment the model will be trained in."""
 import gym
 from gym import spaces
-from training_game import TrainGame
-from rendergame import RenderGame
 import numpy as np
+from training_game import TrainGame
 
 
 def prepare_array(array: np.ndarray):

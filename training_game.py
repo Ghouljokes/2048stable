@@ -57,10 +57,6 @@ class TrainGame:
                 if tile:
                     tile.merged_from = None
 
-    def positions_equal(self, position, tile: Tile):
-        """Check to see if a position is the same as a tile's position."""
-        return position[0] == tile.pos[0] and position[1] == tile.pos[1]
-
     def move_tile(self, tile: Tile, cell: tuple[int, int]):
         """Move a tile to a given position.
         Args:
@@ -105,12 +101,11 @@ class TrainGame:
                     self.reward += merged.value
                 else:
                     self.move_tile(tile, positions["furthest"])
-
-                if not self.positions_equal(cell, tile):
+                if tile.pos != cell:
                     moved = True
-        lower_left = self.get_array()[12]
-        if lower_left == max(self.get_array()):
-            self.reward += lower_left
+        lower_right = self.get_array()[-1]
+        if lower_right == max(self.get_array()):
+            self.reward += lower_right
         self.reward += self.grid.amount_empty()
         if moved:
             self.add_starting_tile()
