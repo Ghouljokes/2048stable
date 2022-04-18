@@ -89,7 +89,7 @@ class TrainGame:
             direction (int): Integer representation of a direction.
         """
         # 0: up, 1: right, 2: down, 3: left
-        self.reward = -5
+        self.reward = self.grid.amount_empty()
         if self.is_game_terminated():
             return
         vector = self.dir_vectors[direction]
@@ -172,7 +172,7 @@ class TrainGame:
 
     def moves_available(self):
         """Check to see if a move can still be made."""
-        return self.grid.amount_empty() or self.tile_matches_available()
+        return self.grid.has_empty() or self.tile_matches_available()
 
     def get_array(self):
         """Retrieve array of all squares on the board."""
