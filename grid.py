@@ -40,9 +40,13 @@ class Grid:
                     cells.append((row, col))
         return cells
 
+    def has_empty(self):
+        """Check if there are empty cells."""
+        return len(self.available_cells()) > 0
+
     def amount_empty(self):
         """Count the amount of empty cells."""
-        return len(self.available_cells()) > 0
+        return len(self.available_cells())
 
     def cell_available(self, cell: tuple[int, int]):
         """Check if the cell at the given position is empty."""
