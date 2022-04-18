@@ -4,20 +4,20 @@ import numpy as np
 from grid import Grid
 from tile import Tile
 
+SIZE = 4
+START_TILES = 2
+WRONG_MOVE_PUNISHMENT = -10
+WRONG_MOVE_CAP = 5
+
 
 class TrainGame:
     """Manage instance of the game."""
 
-    def __init__(self, size):
+    def __init__(self):
         """Initiate game on board of dims size x size"""
-        self.size = size
-        self.start_tiles = 2
-        self.score = 0
         self.reward = 0
-        self.keep_playing = False
         self.stuck_counter = 0
         self.over = False
-        self.won = False
         self.dir_vectors = {
             0: (-1, 0),  # up
             1: (0, 1),  # right
@@ -28,51 +28,27 @@ class TrainGame:
 
     def add_starting_tile(self):
         """Add a 2 or 4 to a random spot on the grid."""
-        if self.grid.has_empty():
-            value = 2 if random.random() < 0.9 else 4
-            tile = Tile(self.grid.random_available_cell(), value)
-            self.grid.insert_tile(tile)
-
-    def add_random_tile(self):
-        if self.grid.has_empty():
-            value = 2 ** random.randint(2, 6)
-            tile = Tile(self.grid.random_available_cell(), value)
-            self.grid.insert_tile(tile)
+        value = 2 if random.random() < 0.9 else 4
+        tile = Tile(self.grid.random_available_cell(), value)
+        self.grid.insert_tile(tile)
 
     def add_start_tiles(self):
         """Add the starting tiles."""
-        for _ in range(self.start_tiles):
+        for _ in range(START_TILES):
             self.add_starting_tile()
-
-    def add_random_tiles(self):
-        for _ in range(8):
-            self.add_random_tile()
 
     def set_up(self):
         """Set up new game."""
-        self.grid = Grid(self.size)
-        self.score = 0
+        self.grid = Grid(SIZE)
         self.reward = 0
         self.stuck = False
         self.over = False
-        self.won = False
-        self.keep_playing = False
         self.stuck_counter = 0
         self.add_start_tiles()
 
-    def restart(self):
-        """Reset game."""
-        self.set_up()
-
-    def set_keep_playing(self):
-        """Continue game."""
-        self.keep_playing = True
-
     def is_game_terminated(self):
         """Check if the game has ended."""
-        if self.over or (self.won and not self.keep_playing) or self.stuck_counter > 5:
-            return True
-        return False
+        return self.over or self.stuck_counter > WRONG_MOVE_CAP
 
     def prepare_tiles(self):
         """Prepare tiles to be moved."""
@@ -126,17 +102,15 @@ class TrainGame:
                     self.grid.insert_tile(merged)
                     self.grid.remove_tile(tile)
                     tile.update_position(positions["next"])
-                    self.score += merged.value
                     self.reward += merged.value
-                    if merged.value == 2048:
-                        self.won = True
-                        self.set_keep_playing()
                 else:
                     self.move_tile(tile, positions["furthest"])
 
                 if not self.positions_equal(cell, tile):
                     moved = True
-        self.reward += self.get_array()[12]
+        lower_left = self.get_array()[12]
+        if lower_left == max(self.get_array()):
+            self.reward += lower_left
         self.reward += self.grid.amount_empty()
         if moved:
             self.add_starting_tile()
@@ -144,14 +118,13 @@ class TrainGame:
             if not self.moves_available():
                 self.over = True
         else:
-            self.score -= 10
-            self.reward = -10
+            self.reward = WRONG_MOVE_PUNISHMENT
             self.stuck_counter += 1
 
     def build_traversals(self, vector: tuple[int, int]):
         """Build lists indicating how to traverse through grid."""
         traversals: dict[str, list[int]] = {"row": [], "col": []}
-        for pos in range(self.size):
+        for pos in range(SIZE):
             traversals["row"].append(pos)
             traversals["col"].append(pos)
         if vector[0] == 1:
@@ -171,8 +144,8 @@ class TrainGame:
 
     def tile_matches_available(self):
         """Check if any tile matches can be made."""
-        for i in range(self.size):
-            for j in range(self.size):
+        for i in range(SIZE):
+            for j in range(SIZE):
                 tile = self.grid.cell_content((i, j))
                 if tile:
                     for direction in range(4):
@@ -195,7 +168,7 @@ class TrainGame:
 
 
 if __name__ == "__main__":
-    test_game_manager = TrainGame(4)
+    test_game_manager = TrainGame()
     grid = test_game_manager.grid.readable_grid()
     for row in grid:
         print(row)
@@ -206,4 +179,3 @@ if __name__ == "__main__":
         grid = test_game_manager.grid.readable_grid()
         for row in grid:
             print(row)
-        print(test_game_manager.score)
