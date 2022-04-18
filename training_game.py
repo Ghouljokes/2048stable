@@ -28,13 +28,13 @@ class TrainGame:
 
     def add_starting_tile(self):
         """Add a 2 or 4 to a random spot on the grid."""
-        if self.grid.amount_empty():
+        if self.grid.has_empty():
             value = 2 if random.random() < 0.9 else 4
             tile = Tile(self.grid.random_available_cell(), value)
             self.grid.insert_tile(tile)
 
     def add_random_tile(self):
-        if self.grid.amount_empty():
+        if self.grid.has_empty():
             value = 2 ** random.randint(2, 6)
             tile = Tile(self.grid.random_available_cell(), value)
             self.grid.insert_tile(tile)
@@ -101,7 +101,7 @@ class TrainGame:
             direction (int): Integer representation of a direction.
         """
         # 0: up, 1: right, 2: down, 3: left
-        self.reward = -5
+        self.reward = 0
         if self.is_game_terminated():
             return
         vector = self.dir_vectors[direction]
@@ -136,7 +136,8 @@ class TrainGame:
 
                 if not self.positions_equal(cell, tile):
                     moved = True
-
+        self.reward += self.get_array()[12]
+        self.reward += self.grid.amount_empty()
         if moved:
             self.add_starting_tile()
             self.stuck_counter = 0
@@ -184,7 +185,7 @@ class TrainGame:
 
     def moves_available(self):
         """Check to see if a move can still be made."""
-        return self.grid.amount_empty() or self.tile_matches_available()
+        return self.grid.has_empty() or self.tile_matches_available()
 
     def get_array(self):
         """Retrieve array of all squares on the board."""
