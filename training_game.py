@@ -103,10 +103,16 @@ class TrainGame:
                     self.move_tile(tile, positions["furthest"])
                 if tile.pos != cell:
                     moved = True
-        lower_right = self.get_array()[-1]
-        if lower_right == max(self.get_array()):
-            self.reward += lower_right
-        self.reward += self.grid.amount_empty()
+        current_array = self.get_array()
+        corners = [
+            current_array[0],
+            current_array[3],
+            current_array[12],
+            current_array[15],
+        ]
+        max = np.max(self.get_array())
+        if max in corners:  # Reward ai for having maximum tile in a corner.
+            self.reward += max
         if moved:
             self.add_starting_tile()
             self.stuck_counter = 0

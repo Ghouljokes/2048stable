@@ -37,7 +37,8 @@ def play_all():
 
 if __name__ == "__main__":
     print(
-        "Please enter number of model you'd wish to play,'latest' for latest, or 'all' to play all."
+        "Please enter number of model you'd wish to play,"
+        + "'latest' for latest, or 'all' to play all."
     )
     to_play = input()
     if to_play == "all":

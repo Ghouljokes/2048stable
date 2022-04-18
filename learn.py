@@ -16,18 +16,18 @@ def ensure_dir(directory):
         os.makedirs(directory)
 
 
-def initialize_model(environment):
+def initialize_model(env):
     """Create model if none exists, else load latest and get model count."""
     prev_models = os.listdir(MODDIR)
     if len(prev_models) == 0:
-        init_model = PPO("MlpPolicy", environment, verbose=1, tensorboard_log=LOGDIR)
+        init_model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=LOGDIR)
         init_model_count = 1
     else:
         last_model = prev_models[-1]
         last_step = int(last_model.split(".")[0])
         init_model = PPO.load(
             f"{MODDIR}/{last_model}",
-            environment,
+            env,
             verbose=1,
             tensorboard_log=LOGDIR,
         )
@@ -56,10 +56,10 @@ if __name__ == "__main__":
     ensure_dir(MODDIR)
     ensure_dir(LOGDIR)
 
-    env = GameEnvironment()
-    env.reset()
+    environment = GameEnvironment()
+    environment.reset()
 
-    model, model_count = initialize_model(env)
+    model, model_count = initialize_model(environment)
 
     for i in range(model_count, 1000000000):
         model.learn(

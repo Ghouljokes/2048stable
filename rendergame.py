@@ -62,7 +62,6 @@ class RenderGame:
         self.tiles = self.driver.find_element(By.CLASS_NAME, "tile-container")
         self.tile_sub_elements = self.tiles.find_elements(By.XPATH, "./*")
         self.replay = self.driver.find_element(By.CLASS_NAME, "restart-button")
-        self.score_element = self.driver.find_element(By.CLASS_NAME, "score-container")
 
     def get_tile_classes(self) -> list[str]:
         """Get list of the classes for all tiles currently in self.tiles.
