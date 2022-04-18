@@ -89,7 +89,6 @@ class TrainGame:
             direction (int): Integer representation of a direction.
         """
         # 0: up, 1: right, 2: down, 3: left
-        self.reward = self.grid.amount_empty()
         if self.is_game_terminated():
             return
         vector = self.dir_vectors[direction]
@@ -124,7 +123,7 @@ class TrainGame:
 
                 if not self.positions_equal(cell, tile):
                     moved = True
-
+        self.reward = self.grid.amount_empty()
         if moved:
             self.add_starting_tile()
             self.stuck_counter = 0
