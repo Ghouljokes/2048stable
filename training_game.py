@@ -24,7 +24,7 @@ class TrainGame:
             2: (1, 0),  # down
             3: (0, -1),  # left
         }
-        self.start_new()
+        self.set_up()
 
     def add_starting_tile(self):
         """Add a 2 or 4 to a random spot on the grid."""

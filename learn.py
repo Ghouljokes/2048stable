@@ -1,14 +1,19 @@
 """Main file to train the ai."""
 import os
+import argparse
 from stable_baselines3.ppo.ppo import PPO
 from environment import GameEnvironment, prepare_array
 from rendergame import RenderGame
 
-TIMESTEPS = 25000
+TIMESTEPS = 50000
 
 MODDIR = "models/PPO"
 LOGDIR = "logs/PPO"
 
+
+parser = argparse.ArgumentParser(description="Program to train the ai.")
+parser.add_argument("--showgame", help="Enables html replay each time a model is saved.", action="store_true")
+args = parser.parse_args()
 
 def ensure_dir(directory):
     """Check if directory exists, and if not, make it."""
@@ -19,11 +24,13 @@ def ensure_dir(directory):
 def initialize_model(env):
     """Create model if none exists, else load latest and get model count."""
     prev_models = os.listdir(MODDIR)
+    prev_models.sort(key=lambda model: int(model.split(".")[0]))
     if len(prev_models) == 0:
         init_model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=LOGDIR)
         init_model_count = 1
     else:
         last_model = prev_models[-1]
+        print(f"Loading model {last_model}")
         last_step = int(last_model.split(".")[0])
         init_model = PPO.load(
             f"{MODDIR}/{last_model}",
@@ -66,4 +73,5 @@ if __name__ == "__main__":
             total_timesteps=TIMESTEPS, tb_log_name="PPO", reset_num_timesteps=False
         )
         model.save(f"{MODDIR}/{TIMESTEPS*i}")
-        show_game(model)
+        if args.showgame:
+            show_game(model)
