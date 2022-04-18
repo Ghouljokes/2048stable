@@ -1,8 +1,8 @@
+"""Environment the model will be trained in."""
 import gym
 from gym import spaces
-from training_game import TrainGame
-from rendergame import RenderGame
 import numpy as np
+from training_game import TrainGame
 
 
 def prepare_array(array: np.ndarray):
@@ -21,7 +21,7 @@ class GameEnvironment(gym.Env):
         super(GameEnvironment, self).__init__()
         # Define action and observation space
         # They must be gym.spaces objects
-        self.game = TrainGame(4)
+        self.game = TrainGame()
         self.done = False
         self.action_space = spaces.Discrete(4)
         self.observation_space = spaces.Box(
@@ -40,7 +40,7 @@ class GameEnvironment(gym.Env):
 
     def reset(self):
         self.done = False
-        self.game.start_new()
+        self.game.set_up()
         self.reward = 0
         # reset everything
         observation = prepare_array(self.game.get_array()).astype(np.float32)

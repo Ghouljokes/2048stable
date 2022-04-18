@@ -41,17 +41,18 @@ class Grid:
         return cells
 
     def has_empty(self):
-        """Count the amount of empty cells."""
+        """Check if there are empty cells."""
         return len(self.available_cells()) > 0
-    
+
     def amount_empty(self):
+        """Count the amount of empty cells."""
         return len(self.available_cells())
 
     def cell_available(self, cell: tuple[int, int]):
         """Check if the cell at the given position is empty."""
         return self.cell_content(cell) is None
 
-    def cell_content(self, cell: tuple[int, int]):
+    def cell_content(self, cell: tuple[int, int]) -> Tile | None:
         """Return contents of cell at given position."""
         if self.within_bounds(cell):
             return self.cells[cell[0]][cell[1]]
@@ -65,9 +66,9 @@ class Grid:
         """Remove tile from grid."""
         self.cells[tile.pos[0]][tile.pos[1]] = None
 
-    def within_bounds(self, position: tuple):
+    def within_bounds(self, pos: tuple):
         """Check to see if given position is within bounds of grid."""
-        return position[0] in range(self.size) and position[1] in range(self.size)
+        return pos[0] in range(self.size) and pos[1] in range(self.size)
 
     def readable_grid(self):
         """Make readable version of the grid."""

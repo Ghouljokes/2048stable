@@ -7,7 +7,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import StaleElementReferenceException
 
-
 GAME_LOCATION = os.path.join(os.getcwd(), "2048-master/index.html")
 VALUES = {
     "tile-2": 2,
@@ -63,7 +62,6 @@ class RenderGame:
         self.tiles = self.driver.find_element(By.CLASS_NAME, "tile-container")
         self.tile_sub_elements = self.tiles.find_elements(By.XPATH, "./*")
         self.replay = self.driver.find_element(By.CLASS_NAME, "restart-button")
-        self.score_element = self.driver.find_element(By.CLASS_NAME, "score-container")
 
     def get_tile_classes(self) -> list[str]:
         """Get list of the classes for all tiles currently in self.tiles.
@@ -95,20 +93,14 @@ class RenderGame:
                 continue
         return playing_grid
 
-    def move(self, direction: int):
+    def move(self, direction):
         """Move all tiles in given direction."""
         directions = [Keys.UP, Keys.RIGHT, Keys.DOWN, Keys.LEFT]
         self.body.send_keys(directions[direction])
 
     def is_game_terminated(self):
-        if "game-over" in self.message.get_attribute("class"):
-            return True
-        return False
-
-    def get_score(self):
-        score_text = self.score_element.text
-        score = int(score_text.split("\n")[0])
-        return score
+        """Check if game is over."""
+        return "game-over" in self.message.get_attribute("class")
 
     def quit(self):
         """Quit the game."""

@@ -4,20 +4,20 @@ import numpy as np
 from grid import Grid
 from tile import Tile
 
+SIZE = 4
+START_TILES = 2
+WRONG_MOVE_PUNISHMENT = -10
+WRONG_MOVE_CAP = 5
+
 
 class TrainGame:
     """Manage instance of the game."""
 
-    def __init__(self, size):
+    def __init__(self):
         """Initiate game on board of dims size x size"""
-        self.size = size
-        self.start_tiles = 2
-        self.score = 0
         self.reward = 0
-        self.keep_playing = False
         self.stuck_counter = 0
         self.over = False
-        self.won = False
         self.dir_vectors = {
             0: (-1, 0),  # up
             1: (0, 1),  # right
@@ -32,35 +32,23 @@ class TrainGame:
         tile = Tile(self.grid.random_available_cell(), value)
         self.grid.insert_tile(tile)
 
-    def add_random_tile(self):
-        value = 2 ** random.randint(2, 6)
-        tile = Tile(self.grid.random_available_cell(), value)
-        self.grid.insert_tile(tile)
-
     def add_start_tiles(self):
         """Add the starting tiles."""
-        for _ in range(self.start_tiles):
+        for _ in range(START_TILES):
             self.add_starting_tile()
 
-    def add_random_tiles(self):
-        for _ in range(8):
-            self.add_random_tile()
-
-    def start_new(self):
+    def set_up(self):
         """Set up new game."""
-        self.grid = Grid(self.size)
-        self.score = 0
+        self.grid = Grid(SIZE)
         self.reward = 0
         self.stuck = False
         self.over = False
-        self.won = False
-        self.keep_playing = False
         self.stuck_counter = 0
         self.add_start_tiles()
 
     def is_game_terminated(self):
         """Check if the game has ended."""
-        return self.over or self.stuck_counter > 5
+        return self.over or self.stuck_counter > WRONG_MOVE_CAP
 
     def prepare_tiles(self):
         """Prepare tiles to be moved."""
@@ -68,10 +56,6 @@ class TrainGame:
             for tile in grid_row:
                 if tile:
                     tile.merged_from = None
-
-    def positions_equal(self, position: tuple[int, int], tile: Tile):
-        """Check to see if a position is the same as a tile's position."""
-        return position == tile.pos
 
     def move_tile(self, tile: Tile, cell: tuple[int, int]):
         """Move a tile to a given position.
@@ -89,6 +73,7 @@ class TrainGame:
             direction (int): Integer representation of a direction.
         """
         # 0: up, 1: right, 2: down, 3: left
+        self.reward = 0
         if self.is_game_terminated():
             return
         vector = self.dir_vectors[direction]
@@ -113,31 +98,34 @@ class TrainGame:
                     self.grid.insert_tile(merged)
                     self.grid.remove_tile(tile)
                     tile.update_position(positions["next"])
-                    self.score += merged.value
                     self.reward += merged.value
-                    if merged.value == 2048:
-                        self.won = True
-                        self.keep_playing = True
                 else:
                     self.move_tile(tile, positions["furthest"])
-
-                if not self.positions_equal(cell, tile):
+                if tile.pos != cell:
                     moved = True
-        self.reward = self.grid.amount_empty()
+        current_array = self.get_array()
+        corners = [
+            current_array[0],
+            current_array[3],
+            current_array[12],
+            current_array[15],
+        ]
+        max = np.max(current_array)
+        if max in corners:  # Reward ai for having maximum tile in a corner.
+            self.reward += max
         if moved:
             self.add_starting_tile()
             self.stuck_counter = 0
             if not self.moves_available():
                 self.over = True
         else:
-            self.score -= 10
-            self.reward = -10
+            self.reward = WRONG_MOVE_PUNISHMENT
             self.stuck_counter += 1
 
     def build_traversals(self, vector: tuple[int, int]):
         """Build lists indicating how to traverse through grid."""
         traversals: dict[str, list[int]] = {"row": [], "col": []}
-        for pos in range(self.size):
+        for pos in range(SIZE):
             traversals["row"].append(pos)
             traversals["col"].append(pos)
         if vector[0] == 1:
@@ -157,8 +145,8 @@ class TrainGame:
 
     def tile_matches_available(self):
         """Check if any tile matches can be made."""
-        for i in range(self.size):
-            for j in range(self.size):
+        for i in range(SIZE):
+            for j in range(SIZE):
                 tile = self.grid.cell_content((i, j))
                 if tile:
                     for direction in range(4):
@@ -181,7 +169,7 @@ class TrainGame:
 
 
 if __name__ == "__main__":
-    test_game_manager = TrainGame(4)
+    test_game_manager = TrainGame()
     grid = test_game_manager.grid.readable_grid()
     for row in grid:
         print(row)
@@ -192,4 +180,3 @@ if __name__ == "__main__":
         grid = test_game_manager.grid.readable_grid()
         for row in grid:
             print(row)
-        print(test_game_manager.score)

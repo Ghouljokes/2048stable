@@ -1,52 +1,69 @@
-import gym
-from stable_baselines3 import PPO
+"""Main file to train the ai."""
 import os
-import typing
+from stable_baselines3.ppo.ppo import PPO
 from environment import GameEnvironment, prepare_array
 from rendergame import RenderGame
 
+TIMESTEPS = 25000
 
-moddir = "models/PPO"
-logdir = "logs/PPO"
-
-if not os.path.exists(moddir):
-    os.makedirs(moddir)
-
-if not os.path.exists(logdir):
-    os.makedirs(logdir)
-
-env = GameEnvironment()
-env.reset()
-
-model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=logdir)
-# model = PPO.load(f"{moddir}/150000.zip", env, verbose=1, tensorboard_log=logdir)
+MODDIR = "models/PPO"
+LOGDIR = "logs/PPO"
 
 
-def count_models():
-    """Count how many models are in models directory"""
-    files_list = next(os.walk(moddir))[2]
-    return len(files_list)
+def ensure_dir(directory):
+    """Check if directory exists, and if not, make it."""
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 
-def show_game(ml_model: PPO):  # type: ignore
+def initialize_model(env):
+    """Create model if none exists, else load latest and get model count."""
+    prev_models = os.listdir(MODDIR)
+    if len(prev_models) == 0:
+        init_model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=LOGDIR)
+        init_model_count = 1
+    else:
+        last_model = prev_models[-1]
+        last_step = int(last_model.split(".")[0])
+        init_model = PPO.load(
+            f"{MODDIR}/{last_model}",
+            env,
+            verbose=1,
+            tensorboard_log=LOGDIR,
+        )
+        init_model_count = last_step // TIMESTEPS
+    return init_model, init_model_count
+
+
+def show_game(ml_model):
     """Show game based off current model."""
-    show_game = RenderGame()
+    game = RenderGame()
     stuck_counter = 0
-    observation = prepare_array(show_game.get_array())
-    while stuck_counter < 5 and not show_game.is_game_terminated():
-        direction: int = ml_model.predict(observation)[0]  # type: ignore
-        show_game.move(direction)
-        new_observation = prepare_array(show_game.get_array())
+    observation = prepare_array(game.get_array())
+    while stuck_counter < 5 and not game.is_game_terminated():
+        direction = ml_model.predict(observation)[0]
+        game.move(direction)
+        new_observation = prepare_array(game.get_array())
         if (new_observation == observation).all():
             stuck_counter += 1
         else:
             stuck_counter = 0
         observation = new_observation
-    show_game.quit()
+    game.quit()
 
 
-TIMESTEPS = 50000
-for i in range(1, 1000000000):
-    model.learn(total_timesteps=TIMESTEPS, tb_log_name="PPO", reset_num_timesteps=False)
-    model.save(f"{moddir}/{TIMESTEPS*i}")
-    #show_game(model)  # type: ignore
+if __name__ == "__main__":
+    ensure_dir(MODDIR)
+    ensure_dir(LOGDIR)
+
+    environment = GameEnvironment()
+    environment.reset()
+
+    model, model_count = initialize_model(environment)
+
+    for i in range(model_count, 1000000000):
+        model.learn(
+            total_timesteps=TIMESTEPS, tb_log_name="PPO", reset_num_timesteps=False
+        )
+        model.save(f"{MODDIR}/{TIMESTEPS*i}")
+        show_game(model)
