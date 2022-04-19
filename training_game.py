@@ -1,8 +1,7 @@
 """Module for the game."""
 import random
 import numpy as np
-from grid import Grid
-from tile import Tile
+from grid import Grid, Tile
 
 SIZE = 4
 START_TILES = 2
@@ -65,7 +64,7 @@ class TrainGame:
         """
         self.grid.cells[tile.pos[0]][tile.pos[1]] = None
         self.grid.cells[cell[0]][cell[1]] = tile
-        tile.update_position(cell)
+        tile.pos = cell
 
     def move(self, direction: int):
         """Move all tiles in a given direction.
@@ -97,7 +96,7 @@ class TrainGame:
                     merged.merged_from = [tile, next_tile]
                     self.grid.insert_tile(merged)
                     self.grid.remove_tile(tile)
-                    tile.update_position(positions["next"])
+                    tile.pos = positions["next"]
                     self.reward += merged.value
                 else:
                     self.move_tile(tile, positions["furthest"])

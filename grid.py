@@ -1,6 +1,15 @@
-"""Container for game grid."""
+"""Container for game grid and tiles."""
 import random
-from tile import Tile
+
+
+class Tile:
+    """Represent a tile on the board."""
+
+    def __init__(self, position: tuple[int, int], value=2):
+        self.pos = position
+        self.value: int = value
+
+        self.merged_from: list | None = None
 
 
 class Grid:

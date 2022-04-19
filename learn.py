@@ -5,15 +5,20 @@ from stable_baselines3.ppo.ppo import PPO
 from environment import GameEnvironment, prepare_array
 from rendergame import RenderGame
 
-TIMESTEPS = 50000
+TIMESTEPS = 25000
 
 MODDIR = "models/PPO"
 LOGDIR = "logs/PPO"
 
 
 parser = argparse.ArgumentParser(description="Program to train the ai.")
-parser.add_argument("--showgame", help="Enables html replay each time a model is saved.", action="store_true")
+parser.add_argument(
+    "--showgame",
+    help="Enables html replay each time a model is saved.",
+    action="store_true",
+)
 args = parser.parse_args()
+
 
 def ensure_dir(directory):
     """Check if directory exists, and if not, make it."""
