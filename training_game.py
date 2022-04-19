@@ -104,14 +104,9 @@ class TrainGame:
                 if tile.pos != cell:
                     moved = True
         current_array = self.get_array()
-        corners = [
-            current_array[0],
-            current_array[3],
-            current_array[12],
-            current_array[15],
-        ]
+        lower_right = self.get_array()[-1]
         max = np.max(current_array)
-        if max in corners:  # Reward ai for having maximum tile in a corner.
+        if max == lower_right:  # Reward ai for having maximum tile in a corner.
             self.reward += max
         if moved:
             self.add_starting_tile()
