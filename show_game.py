@@ -1,14 +1,35 @@
 """Show model playing game in the html player."""
 import os
+import argparse
+from stable_baselines3.a2c.a2c import A2C
 from stable_baselines3.ppo.ppo import PPO
+from stable_baselines3.dqn.dqn import DQN
 from rendergame import RenderGame
 from environment import GameEnvironment, prepare_array
 
-MODDIR = "models/PPO"
 
+parser = argparse.ArgumentParser(description="Program to train the ai.")
+
+parser.add_argument(
+    "--a2c", help="Uses A2C for the model instead of PPO.", action="store_true"
+)
+parser.add_argument(
+    "--dqn", help="Uses DQN for the model instead of PPO.", action="store_true"
+)
+args = parser.parse_args()
+
+if args.a2c:
+    ModelType = A2C
+    MODEL_NAME = "A2C"
+elif args.dqn:
+    ModelType = DQN
+    MODEL_NAME = "DQN"
+else:
+    ModelType = PPO
+    MODEL_NAME = "PPO"
+MODDIR = f"models/{MODEL_NAME}"
 env = GameEnvironment()
 env.reset()
-model_dir = "models/PPO"
 
 
 def show_game(ml_model):
@@ -31,8 +52,8 @@ def show_game(ml_model):
 def play_all():
     """Play all saved models."""
     model_list = os.listdir(MODDIR)
-    for model_name in model_list:
-        display_model = PPO.load(f"{MODDIR}/{model_name}", env, verbose=0)
+    for model_num in model_list:
+        display_model = ModelType.load(f"{MODDIR}/{model_num}", env, verbose=0)
         show_game(display_model)
 
 

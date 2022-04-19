@@ -24,16 +24,16 @@ parser.add_argument(
 args = parser.parse_args()
 
 if args.a2c:
-    model_type = A2C
-    model_name = "A2C"
+    ModelType = A2C
+    MODEL_NAME = "A2C"
 elif args.dqn:
-    model_type = DQN
-    model_name = "DQN"
+    ModelType = DQN
+    MODEL_NAME = "DQN"
 else:
-    model_type = PPO
-    model_name = "PPO"
-MODDIR = f"models/{model_name}"
-LOGDIR = f"logs/{model_name}"
+    ModelType = PPO
+    MODEL_NAME = "PPO"
+MODDIR = f"models/{MODEL_NAME}"
+LOGDIR = f"logs/{MODEL_NAME}"
 
 
 def ensure_dir(directory):
@@ -47,13 +47,13 @@ def initialize_model(env):
     prev_models = os.listdir(MODDIR)
     prev_models.sort(key=lambda model: int(model.split(".")[0]))
     if len(prev_models) == 0:
-        init_model = model_type("MlpPolicy", env, verbose=1, tensorboard_log=LOGDIR)
+        init_model = ModelType("MlpPolicy", env, verbose=1, tensorboard_log=LOGDIR)
         init_model_count = 1
     else:
         last_model = prev_models[-1]
         print(f"Loading model {last_model}")
         last_step = int(last_model.split(".")[0])
-        init_model = model_type.load(
+        init_model = ModelType.load(
             f"{MODDIR}/{last_model}",
             env,
             verbose=1,
@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     for i in range(model_count, 1000000000):
         model.learn(
-            total_timesteps=TIMESTEPS, tb_log_name=model_name, reset_num_timesteps=False
+            total_timesteps=TIMESTEPS, tb_log_name=MODEL_NAME, reset_num_timesteps=False
         )
         model.save(f"{MODDIR}/{TIMESTEPS*i}")
         if args.showgame:

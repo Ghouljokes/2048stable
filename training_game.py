@@ -118,9 +118,9 @@ class TrainGame:
                     self.move_tile(cell, positions["furthest"])
         current_grid = self.grid.flat_grid()
         lower_right = self.grid.cells[(-1, -1)]
-        max = np.max(current_grid)
-        if max == lower_right:  # Reward ai for maximum tile in lower right.
-            self.reward += max
+        max_value = np.max(current_grid)
+        if max_value == lower_right:  # Reward ai for maximum tile in lower right.
+            self.reward += max_value
         if not (previous_grid == current_grid).all():
             self.add_starting_tile()
             self.stuck_counter = 0
