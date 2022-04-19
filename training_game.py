@@ -1,12 +1,19 @@
 """Module for the game."""
 import random
 import numpy as np
-from grid import Grid, Tile
+import numpy.typing as npt
+from grid import Grid
 
 SIZE = 4
 START_TILES = 2
 WRONG_MOVE_PUNISHMENT = -10
 WRONG_MOVE_CAP = 5
+DIR_VECTORS = [
+    (-1, 0),  # up
+    (0, 1),  # right
+    (1, 0),  # down
+    (0, -1),  # left
+]
 
 
 class TrainGame:
@@ -14,27 +21,17 @@ class TrainGame:
 
     def __init__(self):
         """Initiate game on board of dims size x size"""
+        self.grid = Grid(SIZE)
         self.reward = 0
         self.stuck_counter = 0
         self.over = False
-        self.dir_vectors = {
-            0: (-1, 0),  # up
-            1: (0, 1),  # right
-            2: (1, 0),  # down
-            3: (0, -1),  # left
-        }
         self.set_up()
 
     def add_starting_tile(self):
-        """Add a 2 or 4 to a random spot on the grid."""
+        """Add a 2 or 4 to a random cell on the grid."""
         value = 2 if random.random() < 0.9 else 4
-        tile = Tile(self.grid.random_available_cell(), value)
-        self.grid.insert_tile(tile)
-
-    def add_start_tiles(self):
-        """Add the starting tiles."""
-        for _ in range(START_TILES):
-            self.add_starting_tile()
+        cell = self.grid.random_available_cell()
+        self.grid.cells[cell] = value
 
     def set_up(self):
         """Set up new game."""
@@ -43,28 +40,48 @@ class TrainGame:
         self.stuck = False
         self.over = False
         self.stuck_counter = 0
-        self.add_start_tiles()
+        for _ in range(START_TILES):
+            self.add_starting_tile()
 
     def is_game_terminated(self):
         """Check if the game has ended."""
         return self.over or self.stuck_counter > WRONG_MOVE_CAP
 
-    def prepare_tiles(self):
-        """Prepare tiles to be moved."""
-        for grid_row in self.grid.cells:
-            for tile in grid_row:
-                if tile:
-                    tile.merged_from = None
-
-    def move_tile(self, tile: Tile, cell: tuple[int, int]):
+    def move_tile(self, start: tuple[int, int], end: tuple[int, int]):
         """Move a tile to a given position.
         Args:
-            tile (Tile): Tile to be moved.
+            start (tuple[int, int]): Position to move from.
             cell (tuple[int, int]): Position to move tile to.
         """
-        self.grid.cells[tile.pos[0]][tile.pos[1]] = None
-        self.grid.cells[cell[0]][cell[1]] = tile
-        tile.pos = cell
+        temp = self.grid.cells[start] * 1
+        self.grid.cells[start] = 0
+        self.grid.cells[end] = temp
+
+    def build_traversals(self, vector: tuple[int, int]):
+        """Build array indicating how to traverse through grid.
+        Args:
+            vector (tuple[int, int]): tuple representing y and x direction.
+        Returns:
+            np.array: Array representing traversal orders for rows and colums."""
+        traversals = np.zeros((2, 4)).astype(int)
+        reverse_trav = range(SIZE - 1, -1, -1)
+        for i in range(2):
+            traversals[i] = reverse_trav if vector[i] == 1 else range(SIZE)
+        return traversals
+
+    def furthest_pos(self, cell: tuple[int, int], vector: tuple[int, int]):
+        """Find furthest position a cell can move in a given vector."""
+        previous = cell
+        cell = (previous[0] + vector[0], previous[1] + vector[1])
+        while self.grid.within_bounds(cell) and self.grid.cells[cell] == 0:
+            previous = cell
+            cell = (previous[0] + vector[0], previous[1] + vector[1])
+        return {"furthest": previous, "next": cell}
+
+    def merge_tiles(self, tile1: tuple[int, int], tile2: tuple[int, int]):
+        """Merges two tiles into a new tile at second tile's position."""
+        self.grid.cells[tile2] = self.grid.cells[tile2] * 2
+        self.grid.cells[tile1] = 0
 
     def move(self, direction: int):
         """Move all tiles in a given direction.
@@ -72,42 +89,37 @@ class TrainGame:
             direction (int): Integer representation of a direction.
         """
         # 0: up, 1: right, 2: down, 3: left
+        previous_grid = self.grid.flat_grid()
         self.reward = 0
         if self.is_game_terminated():
             return
-        vector = self.dir_vectors[direction]
+        vector: tuple[int, int] = DIR_VECTORS[direction]
         traversals = self.build_traversals(vector)
-        moved = False
-        self.prepare_tiles()
-        for trav_row in traversals["row"]:
-            for trav_col in traversals["col"]:
-                cell = (trav_row, trav_col)
-                tile = self.grid.cell_content(cell)
+        merged_cells = []  # Track merged cells to avoid double merges.
+        for trav_row in traversals[0]:
+            for trav_col in traversals[1]:
+                cell: tuple[int, int] = (trav_row, trav_col)
+                tile: int = self.grid.cells[cell]
                 if not tile:
                     continue
-                positions = self.furthest_position(cell, vector)
-                next_tile = self.grid.cell_content(positions["next"])
-                if (
-                    next_tile
-                    and next_tile.value == tile.value
-                    and not next_tile.merged_from
-                ):
-                    merged = Tile(positions["next"], tile.value * 2)
-                    merged.merged_from = [tile, next_tile]
-                    self.grid.insert_tile(merged)
-                    self.grid.remove_tile(tile)
-                    tile.pos = positions["next"]
-                    self.reward += merged.value
+                positions = self.furthest_pos(cell, vector)
+                next_cell = positions["next"]
+                if self.grid.within_bounds(next_cell):
+                    next_tile: int = self.grid.cells[next_cell]
                 else:
-                    self.move_tile(tile, positions["furthest"])
-                if tile.pos != cell:
-                    moved = True
-        current_array = self.get_array()
-        lower_right = self.get_array()[-1]
-        max = np.max(current_array)
+                    next_tile: int = 0
+                if next_tile and next_tile == tile and not next_cell in merged_cells:
+                    self.merge_tiles(cell, next_cell)
+                    merged_cells.append(next_cell)
+                    self.reward += self.grid.cells[next_cell]
+                else:
+                    self.move_tile(cell, positions["furthest"])
+        current_grid = self.grid.flat_grid()
+        lower_right = self.grid.cells[(-1, -1)]
+        max = np.max(current_grid)
         if max == lower_right:  # Reward ai for having maximum tile in a corner.
             self.reward += max
-        if moved:
+        if not (previous_grid == current_grid).all():
             self.add_starting_tile()
             self.stuck_counter = 0
             if not self.moves_available():
@@ -116,61 +128,37 @@ class TrainGame:
             self.reward = WRONG_MOVE_PUNISHMENT
             self.stuck_counter += 1
 
-    def build_traversals(self, vector: tuple[int, int]):
-        """Build lists indicating how to traverse through grid."""
-        traversals: dict[str, list[int]] = {"row": [], "col": []}
-        for pos in range(SIZE):
-            traversals["row"].append(pos)
-            traversals["col"].append(pos)
-        if vector[0] == 1:
-            traversals["row"].reverse()
-        if vector[1] == 1:
-            traversals["col"].reverse()
-        return traversals
-
-    def furthest_position(self, cell: tuple, vector: tuple):
-        """Find furthest position a cell can move in a given vector."""
-        previous = cell
-        cell = (previous[0] + vector[0], previous[1] + vector[1])
-        while self.grid.within_bounds(cell) and self.grid.cell_available(cell):
-            previous = cell
-            cell = (previous[0] + vector[0], previous[1] + vector[1])
-        return {"furthest": previous, "next": cell}
-
     def tile_matches_available(self):
         """Check if any tile matches can be made."""
         for i in range(SIZE):
             for j in range(SIZE):
-                tile = self.grid.cell_content((i, j))
-                if tile:
-                    for direction in range(4):
-                        vector = self.dir_vectors[direction]
-                        cell = (i + vector[0], j + vector[1])
-                        other = self.grid.cell_content(cell)
-                        if other and other.value == tile.value:
-                            return True
+                tile = self.grid.cells[i, j]
+                if not tile:  # skip empty tiles.
+                    continue
+                for vector in DIR_VECTORS:
+                    cell = (i + vector[0], j + vector[1])
+                    if self.grid.within_bounds(cell):
+                        other = self.grid.cells[cell]
+                    else:
+                        other = None
+                    if other and other.value == tile.value:
+                        return True
         return False
 
     def moves_available(self):
         """Check to see if a move can still be made."""
-        return self.grid.has_empty() or self.tile_matches_available()
-
-    def get_array(self):
-        """Retrieve array of all squares on the board."""
-        grid_read = self.grid.readable_grid()
-        grid_array = np.array(grid_read).flatten()
-        return grid_array
+        return self.grid.amount_empty() > 0 or self.tile_matches_available()
 
 
 if __name__ == "__main__":
-    test_game_manager = TrainGame()
-    grid = test_game_manager.grid.readable_grid()
-    for row in grid:
+    test_game = TrainGame()
+    wasd_dirs = {"w": 0, "d": 1, "s": 2, "a": 3}
+    for row in test_game.grid.cells:
         print(row)
 
     while True:
-        move_direction = int(input())
-        test_game_manager.move(move_direction)
-        grid = test_game_manager.grid.readable_grid()
-        for row in grid:
+        move_key = input()
+        move_direction = wasd_dirs[move_key]
+        test_game.move(move_direction)
+        for row in test_game.grid.cells:
             print(row)
