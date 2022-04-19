@@ -38,4 +38,5 @@ class Grid:
         return True
 
     def flat_grid(self):
+        """Return flattened version of grid squares."""
         return self.cells.flatten()

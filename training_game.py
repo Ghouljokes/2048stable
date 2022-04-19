@@ -1,7 +1,6 @@
 """Module for the game."""
 import random
 import numpy as np
-import numpy.typing as npt
 from grid import Grid
 
 SIZE = 4
@@ -62,7 +61,7 @@ class TrainGame:
         Args:
             vector (tuple[int, int]): tuple representing y and x direction.
         Returns:
-            np.array: Array representing traversal orders for rows and colums."""
+            array: Array representing traversal orders for rows and colums."""
         traversals = np.zeros((2, 4)).astype(int)
         reverse_trav = range(SIZE - 1, -1, -1)
         for i in range(2):
@@ -80,8 +79,9 @@ class TrainGame:
 
     def merge_tiles(self, tile1: tuple[int, int], tile2: tuple[int, int]):
         """Merges two tiles into a new tile at second tile's position."""
-        self.grid.cells[tile2] = self.grid.cells[tile2] * 2
+        self.grid.cells[tile2] *= 2
         self.grid.cells[tile1] = 0
+        self.reward += self.grid.cells[tile2]
 
     def move(self, direction: int):
         """Move all tiles in a given direction.
@@ -99,16 +99,18 @@ class TrainGame:
         for trav_row in traversals[0]:
             for trav_col in traversals[1]:
                 cell: tuple[int, int] = (trav_row, trav_col)
-                tile: int = self.grid.cells[cell]
-                if not tile:
+                value: int = self.grid.cells[cell]
+                if not value:
                     continue
                 positions = self.furthest_pos(cell, vector)
                 next_cell = positions["next"]
                 if self.grid.within_bounds(next_cell):
-                    next_tile: int = self.grid.cells[next_cell]
+                    next_value: int = self.grid.cells[next_cell]
                 else:
-                    next_tile: int = 0
-                if next_tile and next_tile == tile and not next_cell in merged_cells:
+                    next_value: int = 0
+                    self.move_tile(cell, positions["furthest"])
+                    continue
+                if next_value == value and next_cell not in merged_cells:
                     self.merge_tiles(cell, next_cell)
                     merged_cells.append(next_cell)
                     self.reward += self.grid.cells[next_cell]
@@ -117,7 +119,7 @@ class TrainGame:
         current_grid = self.grid.flat_grid()
         lower_right = self.grid.cells[(-1, -1)]
         max = np.max(current_grid)
-        if max == lower_right:  # Reward ai for having maximum tile in a corner.
+        if max == lower_right:  # Reward ai for maximum tile in lower right.
             self.reward += max
         if not (previous_grid == current_grid).all():
             self.add_starting_tile()
@@ -140,8 +142,8 @@ class TrainGame:
                     if self.grid.within_bounds(cell):
                         other = self.grid.cells[cell]
                     else:
-                        other = None
-                    if other and other.value == tile.value:
+                        other = 0
+                    if other == tile:
                         return True
         return False
 

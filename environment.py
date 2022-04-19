@@ -7,7 +7,7 @@ from training_game import TrainGame
 
 def prepare_array(array: np.ndarray):
     """Perform log2 on each value of array."""
-    hot_vectors = np.zeros((16, 18))
+    hot_vectors = np.zeros((16, 18)).astype(int)
     for i, num in enumerate(array):
         hot_position = int(np.log2(num)) if num != 0 else 0
         hot_vectors[i][hot_position] = 1
@@ -32,7 +32,7 @@ class GameEnvironment(gym.Env):
     def step(self, action):
         """Action is int between 0 and 3"""
         self.game.move(action)
-        observation = prepare_array(self.game.get_array()).astype(np.float32)
+        observation = prepare_array(self.game.grid.flat_grid())
         self.reward = self.game.reward
         self.done = self.game.is_game_terminated()
         info = {}
@@ -43,7 +43,7 @@ class GameEnvironment(gym.Env):
         self.game.set_up()
         self.reward = 0
         # reset everything
-        observation = prepare_array(self.game.get_array()).astype(np.float32)
+        observation = prepare_array(self.game.grid.flat_grid())
         return observation  # reward, done, info can't be included
 
     def render(self, mode="human"):

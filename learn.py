@@ -1,15 +1,13 @@
 """Main file to train the ai."""
 import os
 import argparse
+from stable_baselines3.a2c.a2c import A2C
 from stable_baselines3.ppo.ppo import PPO
+from stable_baselines3.dqn.dqn import DQN
 from environment import GameEnvironment, prepare_array
 from rendergame import RenderGame
 
 TIMESTEPS = 25000
-
-MODDIR = "models/PPO"
-LOGDIR = "logs/PPO"
-
 
 parser = argparse.ArgumentParser(description="Program to train the ai.")
 parser.add_argument(
@@ -17,7 +15,25 @@ parser.add_argument(
     help="Enables html replay each time a model is saved.",
     action="store_true",
 )
+parser.add_argument(
+    "--a2c", help="Uses A2C for the model instead of PPO.", action="store_true"
+)
+parser.add_argument(
+    "--dqn", help="Uses DQN for the model instead of PPO.", action="store_true"
+)
 args = parser.parse_args()
+
+if args.a2c:
+    model_type = A2C
+    model_name = "A2C"
+elif args.dqn:
+    model_type = DQN
+    model_name = "DQN"
+else:
+    model_type = PPO
+    model_name = "PPO"
+MODDIR = f"models/{model_name}"
+LOGDIR = f"logs/{model_name}"
 
 
 def ensure_dir(directory):
@@ -31,13 +47,13 @@ def initialize_model(env):
     prev_models = os.listdir(MODDIR)
     prev_models.sort(key=lambda model: int(model.split(".")[0]))
     if len(prev_models) == 0:
-        init_model = PPO("MlpPolicy", env, verbose=1, tensorboard_log=LOGDIR)
+        init_model = model_type("MlpPolicy", env, verbose=1, tensorboard_log=LOGDIR)
         init_model_count = 1
     else:
         last_model = prev_models[-1]
         print(f"Loading model {last_model}")
         last_step = int(last_model.split(".")[0])
-        init_model = PPO.load(
+        init_model = model_type.load(
             f"{MODDIR}/{last_model}",
             env,
             verbose=1,
@@ -75,7 +91,7 @@ if __name__ == "__main__":
 
     for i in range(model_count, 1000000000):
         model.learn(
-            total_timesteps=TIMESTEPS, tb_log_name="PPO", reset_num_timesteps=False
+            total_timesteps=TIMESTEPS, tb_log_name=model_name, reset_num_timesteps=False
         )
         model.save(f"{MODDIR}/{TIMESTEPS*i}")
         if args.showgame:
