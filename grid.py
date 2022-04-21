@@ -30,9 +30,9 @@ class Grid:
         """Count amount of empty cells."""
         return len(self.available_cells())
 
-    def within_bounds(self, pos: tuple[int, int]):
+    def within_bounds(self, pos: np.ndarray):
         """Check if given position is within grid bounds"""
-        return all([coord in range(self.size) for coord in pos])
+        return np.all((pos >= 0) & (pos < self.size))
 
     def flat_grid(self):
         """Return flattened version of grid squares."""

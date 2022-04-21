@@ -8,10 +8,10 @@ START_TILES = 2
 WRONG_MOVE_PUNISHMENT = -10
 WRONG_MOVE_CAP = 5
 DIR_VECTORS = [
-    (-1, 0),  # up
-    (0, 1),  # right
-    (1, 0),  # down
-    (0, -1),  # left
+    np.array((-1, 0)),  # up
+    np.array((0, 1)),  # right
+    np.array((1, 0)),  # down
+    np.array((0, -1)),  # left
 ]
 
 
@@ -46,17 +46,17 @@ class TrainGame:
         """Check if the game has ended."""
         return self.over or self.stuck_counter > WRONG_MOVE_CAP
 
-    def move_tile(self, start: tuple[int, int], end: tuple[int, int]):
+    def move_tile(self, start: tuple[int, int], end: np.ndarray):
         """Move a tile to a given position.
         Args:
             start (tuple[int, int]): Position to move from.
-            cell (tuple[int, int]): Position to move tile to.
+            end (np.ndarray): Position to move tile to.
         """
         temp = self.grid.cells[start] * 1
         self.grid.cells[start] = 0
-        self.grid.cells[end] = temp
+        self.grid.cells[tuple(end)] = temp
 
-    def build_traversals(self, vector: tuple[int, int]):
+    def build_traversals(self, vector: np.ndarray):
         """Build array indicating how to traverse through grid.
         Args:
             vector (tuple[int, int]): tuple representing y and x direction.
@@ -67,14 +67,17 @@ class TrainGame:
         cols = forward_trav[::-1] if vector[1] == 1 else forward_trav
         return np.array([rows, cols])
 
-    def furthest_pos(self, cell: tuple[int, int], vector: tuple[int, int]):
+    def furthest_pos(self, cell: tuple[int, int], vector: np.ndarray):
         """Find furthest position a cell can move in a given vector."""
-        previous = cell
-        cell = (previous[0] + vector[0], previous[1] + vector[1])
-        while self.grid.within_bounds(cell) and self.grid.cells[cell] == 0:
-            previous = cell
-            cell = (previous[0] + vector[0], previous[1] + vector[1])
-        return {"furthest": previous, "next": cell}
+        previous = np.array(cell)
+        new_cell = cell + vector
+        while (
+            self.grid.within_bounds(new_cell)
+            and not self.grid.cells[new_cell[0], new_cell[1]]
+        ):
+            previous = new_cell
+            new_cell = previous + vector
+        return {"furthest": previous, "next": tuple(new_cell)}
 
     def merge_tiles(self, tile1: tuple[int, int], tile2: tuple[int, int]):
         """Merges two tiles into a new tile at second tile's position."""
@@ -92,7 +95,7 @@ class TrainGame:
         self.reward = 0
         if self.is_game_terminated():
             return
-        vector: tuple[int, int] = DIR_VECTORS[direction]
+        vector = DIR_VECTORS[direction]
         traversals = self.build_traversals(vector)
         merged_cells = []  # Track merged cells to avoid double merges.
         for trav_row in traversals[0]:
@@ -103,7 +106,7 @@ class TrainGame:
                     continue
                 positions = self.furthest_pos(cell, vector)
                 next_cell = positions["next"]
-                if self.grid.within_bounds(next_cell):
+                if self.grid.within_bounds(np.array(next_cell)):
                     next_value: int = self.grid.cells[next_cell]
                 else:
                     next_value: int = 0
@@ -137,7 +140,7 @@ class TrainGame:
                 if not tile:  # skip empty tiles.
                     continue
                 for vector in DIR_VECTORS:
-                    cell = (i + vector[0], j + vector[1])
+                    cell = vector + (i, j)
                     if self.grid.within_bounds(cell):
                         other = self.grid.cells[cell]
                     else:
