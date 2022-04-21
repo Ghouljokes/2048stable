@@ -4,8 +4,8 @@ import argparse
 from stable_baselines3.a2c.a2c import A2C
 from stable_baselines3.ppo.ppo import PPO
 from stable_baselines3.dqn.dqn import DQN
-from environment import GameEnvironment, prepare_array
-from rendergame import RenderGame
+from environment import GameEnvironment
+from show_game import show_game
 
 TIMESTEPS = 50000
 
@@ -24,13 +24,13 @@ parser.add_argument(
 args = parser.parse_args()
 
 if args.a2c:
-    ModelType = A2C
+    Model = A2C
     MODEL_NAME = "A2C"
 elif args.dqn:
-    ModelType = DQN
+    Model = DQN
     MODEL_NAME = "DQN"
 else:
-    ModelType = PPO
+    Model = PPO
     MODEL_NAME = "PPO"
 MODDIR = f"models/{MODEL_NAME}"
 LOGDIR = f"logs/{MODEL_NAME}"
@@ -47,13 +47,13 @@ def initialize_model(env):
     prev_models = os.listdir(MODDIR)
     prev_models.sort(key=lambda model: int(model.split(".")[0]))
     if len(prev_models) == 0:
-        init_model = ModelType("MlpPolicy", env, verbose=1, tensorboard_log=LOGDIR)
+        init_model = Model("MlpPolicy", env, verbose=1, tensorboard_log=LOGDIR)
         init_model_count = 1
     else:
         last_model = prev_models[-1]
         print(f"Loading model {last_model}")
         last_step = int(last_model.split(".")[0])
-        init_model = ModelType.load(
+        init_model = Model.load(
             f"{MODDIR}/{last_model}",
             env,
             verbose=1,
@@ -61,23 +61,6 @@ def initialize_model(env):
         )
         init_model_count = last_step // TIMESTEPS
     return init_model, init_model_count
-
-
-def show_game(ml_model):
-    """Show game based off current model."""
-    game = RenderGame()
-    stuck_counter = 0
-    observation = prepare_array(game.get_array())
-    while stuck_counter < 5 and not game.is_game_terminated():
-        direction = ml_model.predict(observation)[0]
-        game.move(direction)
-        new_observation = prepare_array(game.get_array())
-        if (new_observation == observation).all():
-            stuck_counter += 1
-        else:
-            stuck_counter = 0
-        observation = new_observation
-    game.quit()
 
 
 if __name__ == "__main__":

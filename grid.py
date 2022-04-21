@@ -32,10 +32,7 @@ class Grid:
 
     def within_bounds(self, pos: tuple[int, int]):
         """Check if given position is within grid bounds"""
-        for coord in pos:
-            if coord not in range(self.size):
-                return False
-        return True
+        return all([coord in range(self.size) for coord in pos])
 
     def flat_grid(self):
         """Return flattened version of grid squares."""

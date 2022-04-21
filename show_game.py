@@ -8,7 +8,7 @@ from rendergame import RenderGame
 from environment import GameEnvironment, prepare_array
 
 
-parser = argparse.ArgumentParser(description="Program to train the ai.")
+parser = argparse.ArgumentParser(description="Show ai replays.")
 
 parser.add_argument(
     "--a2c", help="Uses A2C for the model instead of PPO.", action="store_true"
