@@ -18,7 +18,7 @@ class GameEnvironment(gym.Env):
     """Custom Environment that follows gym interface"""
 
     def __init__(self):
-        super(GameEnvironment, self).__init__()
+        super(GameEnvironment).__init__()
         # Define action and observation space
         # They must be gym.spaces objects
         self.game = TrainGame()

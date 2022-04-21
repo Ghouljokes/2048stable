@@ -119,15 +119,10 @@ class TrainGame:
         current_grid = self.grid.cells
         if (previous_grid == current_grid).all():
             self.reward = WRONG_MOVE_PUNISHMENT
-            print(self.reward)
             self.stuck_counter += 1
             return
         matches_available = self.tile_matches_available()
-        self.reward += matches_available
-        lower_right = self.grid.cells[(-1, -1)]
-        max_value = np.max(current_grid)
-        if max_value == lower_right:  # Reward ai for max tile in lower right.
-            self.reward += np.log2(max_value) * 2
+        self.reward += matches_available * 2
         self.add_starting_tile()
         self.stuck_counter = 0
         if not (self.grid.amount_empty() > 0 or matches_available):
@@ -141,7 +136,7 @@ class TrainGame:
                 tile = self.grid.cells[i, j]
                 if not tile:  # skip empty tiles.
                     continue
-                for vector in DIR_VECTORS:
+                for vector in [DIR_VECTORS[1], DIR_VECTORS[2]]:
                     cell = vector + (i, j)
                     if self.grid.within_bounds(cell):
                         other = self.grid.cells[tuple(cell)]
