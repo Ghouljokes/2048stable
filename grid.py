@@ -8,7 +8,7 @@ class Grid:
 
     def __init__(self, size: int):
         self.size = size
-        self.cells = np.zeros((size, size)).astype(int)
+        self.cells = np.zeros((size, size), dtype=np.int64)
 
     def random_available_cell(self):
         """Return position of random empty cell.

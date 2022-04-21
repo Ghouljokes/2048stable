@@ -62,11 +62,10 @@ class TrainGame:
             vector (tuple[int, int]): tuple representing y and x direction.
         Returns:
             array: Array representing traversal orders for rows and colums."""
-        traversals = np.zeros((2, 4)).astype(int)
-        reverse_trav = range(SIZE - 1, -1, -1)
-        for i in range(2):
-            traversals[i] = reverse_trav if vector[i] == 1 else range(SIZE)
-        return traversals
+        forward_trav = np.array(range(SIZE), dtype=np.int64)
+        rows = forward_trav[::-1] if vector[0] == 1 else forward_trav
+        cols = forward_trav[::-1] if vector[1] == 1 else forward_trav
+        return np.array([rows, cols])
 
     def furthest_pos(self, cell: tuple[int, int], vector: tuple[int, int]):
         """Find furthest position a cell can move in a given vector."""
