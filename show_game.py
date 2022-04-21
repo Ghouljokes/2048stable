@@ -52,6 +52,7 @@ def show_game(ml_model):
 def play_all():
     """Play all saved models."""
     model_list = os.listdir(MODDIR)
+    model_list.sort(key=lambda model: int(model.split(".")[0]))
     for model_num in model_list:
         display_model = ModelType.load(f"{MODDIR}/{model_num}", env, verbose=0)
         show_game(display_model)
@@ -67,8 +68,9 @@ if __name__ == "__main__":
         play_all()
     elif to_play == "latest":
         all_models = os.listdir(MODDIR)
-        model = PPO.load(f"{MODDIR}/{all_models[-1]}", env, verbose=0)
+        all_models.sort(key=lambda model: int(model.split(".")[0]))
+        model = ModelType.load(f"{MODDIR}/{all_models[-1]}", env, verbose=0)
         show_game(model)
     else:
-        model = PPO.load(f"{MODDIR}/{to_play}.zip", env, verbose=0)
+        model = ModelType.load(f"{MODDIR}/{to_play}.zip", env, verbose=0)
         show_game(model)
