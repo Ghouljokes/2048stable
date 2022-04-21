@@ -5,7 +5,7 @@ from grid import Grid
 
 SIZE = 4
 START_TILES = 2
-WRONG_MOVE_PUNISHMENT = -10
+WRONG_MOVE_PUNISHMENT = -30
 WRONG_MOVE_CAP = 5
 DIR_VECTORS = [
     np.array((-1, 0)),  # up
@@ -52,20 +52,18 @@ class TrainGame:
             start (tuple[int, int]): Position to move from.
             end (np.ndarray): Position to move tile to.
         """
-        temp = self.grid.cells[start] * 1
+        temp = self.grid.cells[start]
         self.grid.cells[start] = 0
         self.grid.cells[tuple(end)] = temp
 
     def build_traversals(self, vector: np.ndarray):
         """Build array indicating how to traverse through grid.
         Args:
-            vector (tuple[int, int]): tuple representing y and x direction.
+            vector (array): array representing y and x direction.
         Returns:
             array: Array representing traversal orders for rows and colums."""
-        forward_trav = np.array(range(SIZE), dtype=np.int64)
-        rows = forward_trav[::-1] if vector[0] == 1 else forward_trav
-        cols = forward_trav[::-1] if vector[1] == 1 else forward_trav
-        return np.array([rows, cols])
+        trav = np.array(range(SIZE), dtype=np.int64)
+        return np.array([trav[::-1] if i == 1 else trav for i in vector])
 
     def furthest_pos(self, cell: tuple[int, int], vector: np.ndarray):
         """Find furthest position a cell can move in a given vector."""
@@ -91,7 +89,7 @@ class TrainGame:
             direction (int): Integer representation of a direction.
         """
         # 0: up, 1: right, 2: down, 3: left
-        previous_grid = self.grid.flat_grid()
+        previous_grid = self.grid.cells.copy()
         self.reward = 0
         if self.is_game_terminated():
             return
@@ -106,10 +104,10 @@ class TrainGame:
                     continue
                 positions = self.furthest_pos(cell, vector)
                 next_cell = positions["next"]
+                next_value = 0
                 if self.grid.within_bounds(np.array(next_cell)):
-                    next_value: int = self.grid.cells[next_cell]
+                    next_value = self.grid.cells[next_cell]
                 else:
-                    next_value: int = 0
                     self.move_tile(cell, positions["furthest"])
                     continue
                 if next_value == value and next_cell not in merged_cells:
@@ -118,22 +116,26 @@ class TrainGame:
                     self.reward += self.grid.cells[next_cell]
                 else:
                     self.move_tile(cell, positions["furthest"])
-        current_grid = self.grid.flat_grid()
+        current_grid = self.grid.cells
+        if (previous_grid == current_grid).all():
+            self.reward = WRONG_MOVE_PUNISHMENT
+            print(self.reward)
+            self.stuck_counter += 1
+            return
+        matches_available = self.tile_matches_available()
+        self.reward += matches_available
         lower_right = self.grid.cells[(-1, -1)]
         max_value = np.max(current_grid)
         if max_value == lower_right:  # Reward ai for max tile in lower right.
             self.reward += np.log2(max_value) * 2
-        if not (previous_grid == current_grid).all():
-            self.add_starting_tile()
-            self.stuck_counter = 0
-            if not self.moves_available():
-                self.over = True
-        else:
-            self.reward = WRONG_MOVE_PUNISHMENT
-            self.stuck_counter += 1
+        self.add_starting_tile()
+        self.stuck_counter = 0
+        if not (self.grid.amount_empty() > 0 or matches_available):
+            self.over = True
 
     def tile_matches_available(self):
-        """Check if any tile matches can be made."""
+        """Count the tile matches can be made."""
+        amount_available = 0
         for i in range(SIZE):
             for j in range(SIZE):
                 tile = self.grid.cells[i, j]
@@ -142,16 +144,12 @@ class TrainGame:
                 for vector in DIR_VECTORS:
                     cell = vector + (i, j)
                     if self.grid.within_bounds(cell):
-                        other = self.grid.cells[cell]
+                        other = self.grid.cells[tuple(cell)]
                     else:
                         other = 0
                     if other == tile:
-                        return True
-        return False
-
-    def moves_available(self):
-        """Check to see if a move can still be made."""
-        return self.grid.amount_empty() > 0 or self.tile_matches_available()
+                        amount_available += 1
+        return amount_available
 
 
 if __name__ == "__main__":
