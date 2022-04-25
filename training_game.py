@@ -5,14 +5,17 @@ from grid import Grid
 
 SIZE = 4
 START_TILES = 2
-WRONG_MOVE_PUNISHMENT = -30
+TURN_PUNISHMENT = -5
+WRONG_MOVE_PUNISHMENT = -10
 WRONG_MOVE_CAP = 5
-DIR_VECTORS = [
-    np.array((-1, 0)),  # up
-    np.array((0, 1)),  # right
-    np.array((1, 0)),  # down
-    np.array((0, -1)),  # left
-]
+DIR_VECTORS = np.array(
+    [
+        (-1, 0),  # up
+        (0, 1),  # right
+        (1, 0),  # down
+        (0, -1),  # left
+    ]
+)
 
 
 class TrainGame:
@@ -24,7 +27,8 @@ class TrainGame:
         self.reward = 0
         self.stuck_counter = 0
         self.over = False
-        self.set_up()
+        for _ in range(START_TILES):
+            self.add_starting_tile()
 
     def add_starting_tile(self):
         """Add a 2 or 4 to a random cell on the grid."""
@@ -36,7 +40,6 @@ class TrainGame:
         """Set up new game."""
         self.grid = Grid(SIZE)
         self.reward = 0
-        self.stuck = False
         self.over = False
         self.stuck_counter = 0
         for _ in range(START_TILES):
@@ -90,7 +93,7 @@ class TrainGame:
         """
         # 0: up, 1: right, 2: down, 3: left
         previous_grid = self.grid.cells.copy()
-        self.reward = 0
+        self.reward = TURN_PUNISHMENT
         if self.is_game_terminated():
             return
         vector = DIR_VECTORS[direction]
@@ -111,18 +114,23 @@ class TrainGame:
                     self.move_tile(cell, positions["furthest"])
                     continue
                 if next_value == value and next_cell not in merged_cells:
+                    if self.reward < 0:
+                        self.reward = 0
                     self.merge_tiles(cell, next_cell)
                     merged_cells.append(next_cell)
-                    self.reward += self.grid.cells[next_cell]
                 else:
                     self.move_tile(cell, positions["furthest"])
         current_grid = self.grid.cells
-        if (previous_grid == current_grid).all():
+        if (previous_grid == current_grid).all():  # if invalid move
             self.reward = WRONG_MOVE_PUNISHMENT
             self.stuck_counter += 1
+            if self.stuck_counter >= WRONG_MOVE_CAP:
+                self.reward = -100
             return
+        # set rewards
+        if self.grid.cells[-1, -1] == np.max(self.grid.cells):
+            self.reward += np.log2(self.grid.cells[-1, -1]) * 2
         matches_available = self.tile_matches_available()
-        self.reward += matches_available * 2
         self.add_starting_tile()
         self.stuck_counter = 0
         if not (self.grid.amount_empty() > 0 or matches_available):
