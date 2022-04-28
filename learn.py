@@ -7,7 +7,7 @@ from stable_baselines3.dqn.dqn import DQN
 from environment import GameEnvironment, prepare_array
 from rendergame import RenderGame
 
-TIMESTEPS = 50000
+TIMESTEPS = 25000
 
 parser = argparse.ArgumentParser(description="Program to train the ai.")
 parser.add_argument(

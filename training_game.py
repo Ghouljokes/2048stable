@@ -5,7 +5,7 @@ from grid import Grid
 
 SIZE = 4
 START_TILES = 2
-TURN_PUNISHMENT = -5
+TURN_PUNISHMENT = 0
 WRONG_MOVE_PUNISHMENT = -5
 WRONG_MOVE_CAP = 50
 DIR_VECTORS = np.array(
@@ -114,8 +114,7 @@ class TrainGame:
                     self.move_tile(cell, positions["furthest"])
                     continue
                 if next_value == value and next_cell not in merged_cells:
-                    if self.reward < 0:
-                        self.reward = 0
+                    self.reward = max(self.reward, 0)
                     self.merge_tiles(cell, next_cell)
                     merged_cells.append(next_cell)
                 else:
@@ -126,11 +125,6 @@ class TrainGame:
             self.stuck_counter += 1
             return
         # set rewards
-        """
-        if self.grid.cells[-1, -1] == np.max(self.grid.cells):
-            if self.reward < 0:
-                self.reward = 0
-            self.reward += np.log2(self.grid.cells[-1, -1]) * 2"""
         if self.reward > 0:
             self.reward *= np.log2(np.max(self.grid.cells))
         matches_available = self.tile_matches_available()
