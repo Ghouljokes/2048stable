@@ -1,4 +1,5 @@
-"""Main file to train the ai."""
+"""Module for running learning algorithm."""
+
 import os
 import argparse
 from stable_baselines3.a2c.a2c import A2C
@@ -7,36 +8,85 @@ from stable_baselines3.dqn.dqn import DQN
 from environment import GameEnvironment, prepare_array
 from rendergame import RenderGame
 
-TIMESTEPS = 25000
 
-parser = argparse.ArgumentParser(description="Program to train the ai.")
-parser.add_argument(
-    "--showgame",
-    help="Enables html replay each time a model is saved.",
-    action="store_true",
-)
-parser.add_argument(
-    "--a2c", help="Uses A2C for the model instead of PPO.", action="store_true"
-)
-parser.add_argument(
-    "--dqn", help="Uses DQN for the model instead of PPO.", action="store_true"
-)
-args = parser.parse_args()
-
-if args.a2c:
-    Model = A2C
-    MODEL_NAME = "A2C"
-elif args.dqn:
-    Model = DQN
-    MODEL_NAME = "DQN"
-else:
-    Model = PPO
-    MODEL_NAME = "PPO"
-MODDIR = f"models/{MODEL_NAME}"
-LOGDIR = f"logs/{MODEL_NAME}"
+MODELS = {"A2C": A2C, "DQN": DQN, "PPO": PPO}
 
 
-def show_game(ml_model):
+def get_dirs(model_name: str):
+    """Get dirs for model name, and make them if they don't exist.
+
+    Args:
+        model_name (str): Name of model to get dirs for.
+
+    Returns:
+        str, str: Model and log dirs.
+    """
+    model_dir = f"models/{model_name}"
+    log_dir = f"logs/{model_name}"
+    for directory in [model_dir, log_dir]:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+    return model_dir, log_dir
+
+
+# load a model from a directory
+def find_latest_model(model_dir):
+    """Gets name of latest model from a dir. It is assumed dir is not empty.
+
+    Args:
+        model_dir (str): Name of directory to load model from.
+    Returns:
+        str: name of latest model to load.
+    """
+    model_list = os.listdir(model_dir)
+    model_list.sort(key=lambda model: int(model.split(".")[0]))
+    return model_list[-1]
+
+
+# initialize model in directory if no model exists
+def initialize_model(model_name):
+    """Initialize a model.
+
+    Args:
+        model_type (str): name of model to use.
+
+    Returns:
+        model: Initialized model.
+        int: Timestep to start model from.
+    """
+    model_dir, logdir = get_dirs(model_name)
+    env = GameEnvironment()
+    env.reset()
+    model_type = MODELS[model_name]
+    if os.listdir(model_dir):
+        model_name = find_latest_model(model_dir)
+        print(f"Loading {model_name}")
+        init_model = model_type.load(
+            f"{model_dir}/{model_name}",
+            env,
+            verbose=1,
+            tensorboard_log=logdir,
+        )
+        timesteps = int(model_name.split(".")[0])
+
+    else:
+        init_model = model_type("MlpPolicy", env, verbose=1, tensorboard_log=logdir)
+        timesteps = 0
+    return init_model, timesteps
+
+
+# train a model
+def train_model(model: A2C | PPO | DQN, timesteps: int):
+    """Have a model run its learning algorithm.
+
+    Args:
+        model (Model): Model to train.
+        timesteps (int): Timesteps to train for.
+    """
+    model.learn(total_timesteps=timesteps, reset_num_timesteps=False)
+
+
+def show_game(ml_model: A2C | PPO | DQN):
     """Show game based off current model."""
     game = RenderGame()
     stuck_counter = 0
@@ -53,46 +103,33 @@ def show_game(ml_model):
     game.quit()
 
 
-def ensure_dir(directory):
-    """Check if directory exists, and if not, make it."""
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-
-def initialize_model(env):
-    """Create model if none exists, else load latest and get model count."""
-    prev_models = os.listdir(MODDIR)
-    prev_models.sort(key=lambda model: int(model.split(".")[0]))
-    if len(prev_models) == 0:
-        init_model = Model("MlpPolicy", env, verbose=1, tensorboard_log=LOGDIR)
-        init_model_count = 1
-    else:
-        last_model = prev_models[-1]
-        print(f"Loading model {last_model}")
-        last_step = int(last_model.split(".")[0])
-        init_model = Model.load(
-            f"{MODDIR}/{last_model}",
-            env,
-            verbose=1,
-            tensorboard_log=LOGDIR,
-        )
-        init_model_count = last_step // TIMESTEPS
-    return init_model, init_model_count
-
-
 if __name__ == "__main__":
-    ensure_dir(MODDIR)
-    ensure_dir(LOGDIR)
+    parser = argparse.ArgumentParser(description="Program to train the ai.")
+    parser.add_argument(
+        "--showgame",
+        help="Enables html replay each time a model is saved.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--a2c", help="Uses A2C for the model instead of PPO.", action="store_true"
+    )
+    parser.add_argument(
+        "--dqn", help="Uses DQN for the model instead of PPO.", action="store_true"
+    )
+    args = parser.parse_args()
 
-    environment = GameEnvironment()
-    environment.reset()
+    if args.a2c:
+        MODEL_NAME = "A2C"
+    elif args.dqn:
+        MODEL_NAME = "DQN"
+    else:
+        MODEL_NAME = "PPO"
 
-    model, model_count = initialize_model(environment)
-
-    for i in range(model_count, 1000000000):
-        model.learn(
-            total_timesteps=TIMESTEPS, tb_log_name=MODEL_NAME, reset_num_timesteps=False
-        )
-        model.save(f"{MODDIR}/{TIMESTEPS*i}")
+    model, total_timesteps = initialize_model(MODEL_NAME)
+    TIMESTEP_INTERVAL = 25000
+    while True:
+        train_model(model, TIMESTEP_INTERVAL)
+        total_timesteps += TIMESTEP_INTERVAL
+        model.save(f"models/{MODEL_NAME}/{total_timesteps}")
         if args.showgame:
             show_game(model)
