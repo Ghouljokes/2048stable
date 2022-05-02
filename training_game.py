@@ -5,7 +5,7 @@ from grid import Grid
 
 SIZE = 4
 START_TILES = 2
-TURN_PUNISHMENT = 0
+TURN_PUNISHMENT = -5
 WRONG_MOVE_PUNISHMENT = -5
 WRONG_MOVE_CAP = 50
 DIR_VECTORS = np.array(
@@ -125,8 +125,6 @@ class TrainGame:
             self.stuck_counter += 1
             return
         # set rewards
-        if self.reward > 0:
-            self.reward *= np.log2(np.max(self.grid.cells))
         matches_available = self.tile_matches_available()
         self.add_starting_tile()
         self.stuck_counter = 0
