@@ -20,6 +20,12 @@ VALUES = {
     "tile-512": 512,
     "tile-1024": 1024,
     "tile-2048": 2048,
+    "tile-4096": 4096,
+    "tile-8192": 8192,
+    "tile-16384": 16384,
+    "tile-32768": 32768,
+    "tile-65536": 65536,
+    "tile-131072": 131072,
 }
 POSITIONS = {
     "tile-position-1-1": 0,
@@ -100,6 +106,9 @@ class RenderGame:
 
     def is_game_terminated(self):
         """Check if game is over."""
+        if "game-won" in self.message.get_attribute("class"):
+            keep_going = self.driver.find_element(By.CLASS_NAME, "keep-playing-button")
+            keep_going.click()
         return "game-over" in self.message.get_attribute("class")
 
     def quit(self):
