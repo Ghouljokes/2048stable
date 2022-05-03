@@ -7,7 +7,7 @@ SIZE = 4
 START_TILES = 2
 TURN_PUNISHMENT = -5
 WRONG_MOVE_PUNISHMENT = -5
-WRONG_MOVE_CAP = 50
+WRONG_MOVE_CAP = 1
 DIR_VECTORS = np.array(
     [
         (-1, 0),  # up
@@ -128,7 +128,7 @@ class TrainGame:
         matches_available = self.tile_matches_available()
         self.add_starting_tile()
         self.stuck_counter = 0
-        if not (self.grid.amount_empty() > 0 or matches_available):
+        if not (self.grid.amount_empty() or matches_available):
             self.over = True
 
     def tile_matches_available(self):
