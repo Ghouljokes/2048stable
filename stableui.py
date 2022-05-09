@@ -12,7 +12,7 @@ import learn
 from PyQt6 import QtCore, QtGui, QtWidgets
 
 
-class Ui_Dialog(object):
+class Ui_Dialog(QtWidgets.QWidget):
     def setupUi(self, Dialog):
         Dialog.setObjectName("Dialog")
         Dialog.resize(430, 371)
@@ -42,7 +42,7 @@ class Ui_Dialog(object):
         self.formLayout.setObjectName("formLayout")
         self.Timesteplabel = QtWidgets.QLabel(self.verticalLayoutWidget)
         self.Timesteplabel.setObjectName("Timesteplabel")
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole, self.Timesteplabel)
+        # self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole, self.Timesteplabel)
         self.TimeSteps = QtWidgets.QSpinBox(self.verticalLayoutWidget)
         self.TimeSteps.setMinimum(10000)
         self.TimeSteps.setMaximum(1000000)
@@ -50,10 +50,10 @@ class Ui_Dialog(object):
         self.TimeSteps.setProperty("value", 25000)
         self.TimeSteps.setObjectName("TimeSteps")
 
-        self.formLayout.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.TimeSteps)
+        # self.formLayout.setWidget(0, QtWidgets.QFormLayout.ItemRole, self.TimeSteps)
         self.mtypelabel = QtWidgets.QLabel(self.verticalLayoutWidget)
         self.mtypelabel.setObjectName("mtypelabel")
-        self.formLayout.setWidget(1, QtWidgets.QFormLayout.LabelRole, self.mtypelabel)
+        # self.formLayout.setWidget(1, QtWidgets.QFormLayout.ItemRole, self.mtypelabel)
         self.ModelType = QtWidgets.QVBoxLayout()
         self.ModelType.setObjectName("ModelType")
 
@@ -73,17 +73,16 @@ class Ui_Dialog(object):
         self.DQN.toggled.connect(self.set_dqn)
         self.ModelType.addWidget(self.DQN)
 
-        self.formLayout.setLayout(1, QtWidgets.QFormLayout.FieldRole, self.ModelType)
+        # self.formLayout.setLayout(1, self.verticalLayoutWidget)
         self.showgame = QtWidgets.QCheckBox(self.verticalLayoutWidget)
         self.showgame.setText("")
         self.showgame.setObjectName("showgame")
         self.showgame.stateChanged.connect(self.set_showgame)
-        self.formLayout.setWidget(2, QtWidgets.QFormLayout.FieldRole, self.showgame)
+        self.formLayout.addWidget(self.showgame)
         self.showgamelabel = QtWidgets.QLabel(self.verticalLayoutWidget)
         self.showgamelabel.setObjectName("showgamelabel")
-        self.formLayout.setWidget(
-            2, QtWidgets.QFormLayout.LabelRole, self.showgamelabel
-        )
+        self.formLayout.addWidget(self.showgamelabel)
+        self.setLayout(self.verticalLayout_3)
         self.verticalLayout_3.addLayout(self.formLayout)
 
         self.retranslateUi(Dialog)
@@ -135,4 +134,4 @@ if __name__ == "__main__":
     ui = Ui_Dialog()
     ui.setupUi(Dialog)
     Dialog.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
