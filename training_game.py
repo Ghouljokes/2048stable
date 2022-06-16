@@ -1,164 +1,188 @@
 """Module for the game."""
 import random
 import numpy as np
-from grid import Grid
+from defs import MAX_STUCK, WRONG_MOVE_PUNISHMENT, DIR_VECTORS, TRAVERSALS
 
 SIZE = 4
 START_TILES = 2
-TURN_PUNISHMENT = -5
-WRONG_MOVE_PUNISHMENT = -5
-WRONG_MOVE_CAP = 1
-DIR_VECTORS = np.array(
-    [
-        (-1, 0),  # up
-        (0, 1),  # right
-        (1, 0),  # down
-        (0, -1),  # left
-    ]
-)
+
+
+def create_positions():
+    """Create list of all position coords on the board.
+
+    Returns:
+        list[tuple[int]]: List of all possible positions.
+    """
+    positions: list[tuple[int, int]] = []
+    for row in range(SIZE):
+        for col in range(SIZE):
+            positions.append((row, col))
+    return positions
+
+
+POSITIONS = create_positions()
+
+
+def on_grid(pos):
+    """Check if given position is within grid bounds."""
+    return tuple(pos) in POSITIONS
 
 
 class TrainGame:
     """Manage instance of the game."""
 
     def __init__(self):
-        """Initiate game on board of dims size x size"""
-        self.grid = Grid(SIZE)
+        """Initiate game on board of dims size x size."""
+        self.grid = np.zeros((SIZE, SIZE), dtype=np.int64)
         self.reward = 0
         self.stuck_counter = 0
         self.over = False
+        self.merges = []  # Track merged cells to avoid double merges.
         for _ in range(START_TILES):
             self.add_starting_tile()
+
+    def available_cells(self):
+        """Return list of positions of empty cells."""
+        empty_cells: list[tuple[int, int]] = []
+        for pos in POSITIONS:
+            if self.grid[pos] == 0:
+                empty_cells.append(pos)
+        return empty_cells
 
     def add_starting_tile(self):
         """Add a 2 or 4 to a random cell on the grid."""
-        value = 2 if random.random() < 0.9 else 4
-        cell = self.grid.random_available_cell()
-        self.grid.cells[cell] = value
+        cell = random.choice(self.available_cells())
+        self.grid[cell] = 2 if random.random() < 0.9 else 4
 
-    def set_up(self):
-        """Set up new game."""
-        self.grid = Grid(SIZE)
-        self.reward = 0
-        self.over = False
-        self.stuck_counter = 0
-        for _ in range(START_TILES):
-            self.add_starting_tile()
-
-    def is_game_terminated(self):
+    def is_terminated(self):
         """Check if the game has ended."""
-        return self.over or self.stuck_counter > WRONG_MOVE_CAP
+        return self.over or self.stuck_counter > MAX_STUCK
 
-    def move_tile(self, start: tuple[int, int], end: np.ndarray):
+    def pos_swap(self, start: tuple[int, int], end):
         """Move a tile to a given position.
+
         Args:
             start (tuple[int, int]): Position to move from.
-            end (np.ndarray): Position to move tile to.
+            end (tuple[int, int]): Position to move tile to.
         """
-        temp = self.grid.cells[start]
-        self.grid.cells[start] = 0
-        self.grid.cells[tuple(end)] = temp
-
-    def build_traversals(self, vector: np.ndarray):
-        """Build array indicating how to traverse through grid.
-        Args:
-            vector (array): array representing y and x direction.
-        Returns:
-            array: Array representing traversal orders for rows and colums."""
-        trav = np.array(range(SIZE), dtype=np.int64)
-        return np.array([trav[::-1] if i == 1 else trav for i in vector])
+        temp = self.grid[start]
+        self.grid[start] = 0
+        self.grid[end] = temp
 
     def furthest_pos(self, cell: tuple[int, int], vector: np.ndarray):
-        """Find furthest position a cell can move in a given vector."""
-        previous = np.array(cell)
-        new_cell = cell + vector
-        while (
-            self.grid.within_bounds(new_cell)
-            and not self.grid.cells[new_cell[0], new_cell[1]]
-        ):
-            previous = new_cell
-            new_cell = previous + vector
-        return {"furthest": previous, "next": tuple(new_cell)}
+        """Get furthest and next tiles from cell in given direction.
 
-    def merge_tiles(self, tile1: tuple[int, int], tile2: tuple[int, int]):
-        """Merges two tiles into a new tile at second tile's position."""
-        self.grid.cells[tile2] *= 2
-        self.grid.cells[tile1] = 0
-        self.reward += self.grid.cells[tile2]
+        Args:
+            cell (tuple[int, int]): Coordinates of starting cell
+            vector (np.ndarray): Direction vector to check in.
+
+        Returns:
+            tuple[tuple, tuple]: furthest empty square and the cell after.
+        """
+        furthest_empty = cell
+        next_cell = tuple(cell + vector)
+        while on_grid(next_cell) and self.grid[next_cell] == 0:
+            furthest_empty = next_cell
+            next_cell = tuple(furthest_empty + vector)
+        return furthest_empty, next_cell
+
+    def merge(self, tile1: tuple[int, int], tile2: tuple[int, int]):
+        """Merge tile1 into tile2."""
+        self.grid[tile2] *= 2
+        self.grid[tile1] = 0
+        self.reward += self.grid[tile2]
+        self.merges.append(tile2)
+
+    def check_merge(self, cell: tuple[int, int], next_cell):
+        """Check if a merge will occur between two cells.
+
+        Args:
+            cell (tuple): coordinates of the cell to check from.
+            next_cell: coordinates of cell to merge to.
+
+        Returns:
+            bool: Whether or not a merge will happen
+        """
+        return (
+            on_grid(next_cell)
+            and self.grid[cell] == self.grid[next_cell]
+            and next_cell not in self.merges
+        )
+
+    def move_cell(self, cell: tuple, vector):
+        """Move a cell in a given direction.
+
+        Args:
+            cell (tuple): Cell to move the contents of.
+            vector (np.ndarray): Direction vector for the cell to move in.
+        """
+        furthest_space, next_cell = self.furthest_pos(cell, vector)
+        if self.check_merge(cell, next_cell):
+            self.merge(cell, next_cell)
+        else:
+            self.pos_swap(cell, furthest_space)
 
     def move(self, direction: int):
         """Move all tiles in a given direction.
+
         Args:
             direction (int): Integer representation of a direction.
         """
         # 0: up, 1: right, 2: down, 3: left
-        previous_grid = self.grid.cells.copy()
-        self.reward = TURN_PUNISHMENT
-        if self.is_game_terminated():
-            return
+        self.reward = 0
+        previous_grid = self.grid.copy()
         vector = DIR_VECTORS[direction]
-        traversals = self.build_traversals(vector)
-        merged_cells = []  # Track merged cells to avoid double merges.
+        # direction to traverse the grid.
+        traversals = TRAVERSALS[direction]
+        self.merges = []  # reset merged cells
         for trav_row in traversals[0]:
             for trav_col in traversals[1]:
                 cell: tuple[int, int] = (trav_row, trav_col)
-                value: int = self.grid.cells[cell]
-                if not value:
-                    continue
-                positions = self.furthest_pos(cell, vector)
-                next_cell = positions["next"]
-                next_value = 0
-                if self.grid.within_bounds(np.array(next_cell)):
-                    next_value = self.grid.cells[next_cell]
-                else:
-                    self.move_tile(cell, positions["furthest"])
-                    continue
-                if next_value == value and next_cell not in merged_cells:
-                    self.reward = max(self.reward, 0)
-                    self.merge_tiles(cell, next_cell)
-                    merged_cells.append(next_cell)
-                else:
-                    self.move_tile(cell, positions["furthest"])
-        current_grid = self.grid.cells
-        if (previous_grid == current_grid).all():  # if invalid move
-            self.reward = WRONG_MOVE_PUNISHMENT
+                if self.grid[cell] != 0:
+                    self.move_cell(cell, vector)
+        if (previous_grid == self.grid).all():  # if invalid move
+            self.reward += WRONG_MOVE_PUNISHMENT
             self.stuck_counter += 1
             return
-        # set rewards
-        matches_available = self.tile_matches_available()
         self.add_starting_tile()
         self.stuck_counter = 0
-        if not (self.grid.amount_empty() or matches_available):
+        if not self.available_cells() and not self.matches_available():
             self.over = True
 
-    def tile_matches_available(self):
-        """Count the tile matches can be made."""
-        amount_available = 0
-        for i in range(SIZE):
-            for j in range(SIZE):
-                tile = self.grid.cells[i, j]
-                if not tile:  # skip empty tiles.
-                    continue
-                for vector in [DIR_VECTORS[1], DIR_VECTORS[2]]:
-                    cell = vector + (i, j)
-                    if self.grid.within_bounds(cell):
-                        other = self.grid.cells[tuple(cell)]
-                    else:
-                        other = 0
-                    if other == tile:
-                        amount_available += 1
-        return amount_available
+    def matches_available(self):
+        """Check if any matches can be made."""
+        for pos in POSITIONS:
+            if self.grid[pos] == 0:
+                continue
+            for i in range(2):
+                _, next_cell = self.furthest_pos(pos, DIR_VECTORS[i])
+                if self.check_merge(pos, next_cell):
+                    return True
+        return False
+
+    def show_board(self):
+        """Display readable version of grid, for testing."""
+        display = [["0", "0", "0", "0"] for _ in range(4)]
+        for pos in POSITIONS:
+            display[pos[0]][pos[1]] = str(self.grid[pos])
+        for col in range(SIZE):
+            lengths = [len(display[row][col]) for row in range(SIZE)]
+            for row in range(SIZE):
+                while len(display[row][col]) < max(lengths):
+                    display[row][col] += " "
+        for row in display:
+            print("|".join(row))
 
 
 if __name__ == "__main__":
+
     test_game = TrainGame()
     wasd_dirs = {"w": 0, "d": 1, "s": 2, "a": 3}
-    for row in test_game.grid.cells:
-        print(row)
+    test_game.show_board()
 
-    while True:
+    while not test_game.is_terminated():
         move_key = input()
         move_direction = wasd_dirs[move_key]
+        # move_direction = random.randint(0, 3)
         test_game.move(move_direction)
-        for row in test_game.grid.cells:
-            print(row)
+        test_game.show_board()

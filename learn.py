@@ -91,7 +91,7 @@ def show_game(ml_model: A2C | PPO | DQN):
     game = RenderGame()
     stuck_counter = 0
     observation = prepare_array(game.get_array())
-    while stuck_counter < 5 and not game.is_game_terminated():
+    while stuck_counter < 5 and not game.is_terminated():
         direction = ml_model.predict(observation)[0]
         game.move(direction)
         new_observation = prepare_array(game.get_array())
@@ -100,7 +100,7 @@ def show_game(ml_model: A2C | PPO | DQN):
         else:
             stuck_counter = 0
         observation = new_observation
-    game.quit()
+    game.driver.quit()
 
 
 if __name__ == "__main__":

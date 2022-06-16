@@ -1,23 +1,66 @@
 """Module for Game_Instance object."""
+import time
 import os
 import numpy as np
-from selenium.webdriver.chrome.webdriver import WebDriver
+from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import StaleElementReferenceException
-from defs import VALUES, POSITIONS, WINDOW_SIZE, WINDOW_POS
 
 GAME_LOCATION = os.path.join(os.getcwd(), "2048-master/index.html")
+VALUES = {
+    "tile-2": 2,
+    "tile-4": 4,
+    "tile-8": 8,
+    "tile-16": 16,
+    "tile-32": 32,
+    "tile-64": 64,
+    "tile-128": 128,
+    "tile-256": 256,
+    "tile-512": 512,
+    "tile-1024": 1024,
+    "tile-2048": 2048,
+    "tile-4096": 4096,
+    "tile-8192": 8192,
+    "tile-16384": 16384,
+    "tile-32768": 32768,
+    "tile-65536": 65536,
+    "tile-131072": 131072,
+}
+POSITIONS = {
+    "tile-position-1-1": 0,
+    "tile-position-2-1": 1,
+    "tile-position-3-1": 2,
+    "tile-position-4-1": 3,
+    "tile-position-1-2": 4,
+    "tile-position-2-2": 5,
+    "tile-position-3-2": 6,
+    "tile-position-4-2": 7,
+    "tile-position-1-3": 8,
+    "tile-position-2-3": 9,
+    "tile-position-3-3": 10,
+    "tile-position-4-3": 11,
+    "tile-position-1-4": 12,
+    "tile-position-2-4": 13,
+    "tile-position-3-4": 14,
+    "tile-position-4-4": 15,
+}
 
 
 class RenderGame:
     """Instance of 2048."""
 
-    def __init__(self):
-        """Launch an instance of 2048."""
-        self.driver = WebDriver()
-        self.driver.set_window_size(WINDOW_SIZE[0], WINDOW_SIZE[1])
-        self.driver.set_window_position(WINDOW_POS[0], WINDOW_POS[1])
+    def __init__(self, position=(10, 10), size=(500, 600)):
+        """Launch an instance of 2048.
+
+        Args:
+            game_location (str): Location game is located on computer.
+            position (tuple): Position to open window at. Defaults to (10, 10).
+            size (tuple): Size to open window as. Defaults to (500, 600)
+        """
+        self.driver = webdriver.Chrome()
+        self.driver.set_window_size(size[0], size[1])
+        self.driver.set_window_position(position[0], position[1])
         self.driver.get("file://" + GAME_LOCATION)
         # Store WebElements.
         self.body = self.driver.find_element(By.CSS_SELECTOR, "body")
@@ -44,7 +87,6 @@ class RenderGame:
             array: 1D array of all squares.
         """
         while True:
-            # keep trying for grid until it's available.
             try:
                 playing_grid = np.zeros((16))
                 for tile_class in self.get_tile_classes():
@@ -62,11 +104,20 @@ class RenderGame:
         directions = [Keys.UP, Keys.RIGHT, Keys.DOWN, Keys.LEFT]
         self.body.send_keys(directions[direction])
 
-    def is_terminated(self):
-        """Check if the game is over."""
-        message = self.message.get_attribute("class")
-        if "game-won" in message:
-            keep_playing = "keep-playing-button"
-            self.driver.find_element(By.CLASS_NAME, keep_playing).click()
-            return False
-        return "game-over" in message
+    def is_game_terminated(self):
+        """Check if game is over."""
+        if "game-won" in self.message.get_attribute("class"):
+            keep_going = self.driver.find_element(By.CLASS_NAME, "keep-playing-button")
+            keep_going.click()
+        return "game-over" in self.message.get_attribute("class")
+
+    def quit(self):
+        """Quit the game."""
+        self.driver.quit()
+
+
+if __name__ == "__main__":
+    test_game = RenderGame(GAME_LOCATION)
+    print(test_game.get_tile_classes())
+    time.sleep(2)
+    test_game.quit()

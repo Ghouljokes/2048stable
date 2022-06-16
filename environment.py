@@ -7,12 +7,14 @@ from training_game import TrainGame
 
 def prepare_array(array: np.ndarray):
     """Perform log2 on each value of array."""
-    hot_vectors = np.zeros((16, 17)).astype(int)
+    hot_vectors = np.zeros((16, 18)).astype(int)
     for i, num in enumerate(array):
         if num != 0:
-            hot_position = int(np.log2(num)) - 1
+            hot_position = int(np.log2(num))
             hot_vectors[i][hot_position] = 1
-    return hot_vectors
+        else:
+            hot_vectors[i][0] = 1
+    return hot_vectors.flatten()
 
 
 class GameEnvironment(gym.Env):
@@ -25,26 +27,24 @@ class GameEnvironment(gym.Env):
         self.game = TrainGame()
         self.done = False
         self.action_space = spaces.Discrete(4)
-        self.observation_space = spaces.Box(
-            low=0, high=1, shape=(16, 17), dtype=np.float32
-        )
+        self.observation_space = spaces.MultiBinary((16 * 18))
         self.reward = 0
 
     def step(self, action):
         """Action is int between 0 and 3"""
         self.game.move(action)
-        observation = prepare_array(self.game.grid.flat_grid())
+        observation = prepare_array(self.game.grid.flatten())
         self.reward = self.game.reward
-        self.done = self.game.is_game_terminated()
+        self.done = self.game.is_terminated()
         info = {}
         return observation, self.reward, self.done, info
 
     def reset(self):
         self.done = False
-        self.game.set_up()
+        self.game.__init__()
         self.reward = 0
         # reset everything
-        observation = prepare_array(self.game.grid.flat_grid())
+        observation = prepare_array(self.game.grid.flatten())
         return observation  # reward, done, info can't be included
 
     def render(self, mode="human"):
