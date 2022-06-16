@@ -6,14 +6,18 @@ from training_game import TrainGame
 
 
 def prepare_array(array: np.ndarray):
-    """Perform log2 on each value of array."""
+    """Create a one-hot vector array of the game grid.
+
+    Args:
+        array (np.ndarray): flattened array of the game board.
+
+    Returns:
+        np.ndarray: flattened one-hot vectorization.
+    """
     hot_vectors = np.zeros((16, 18)).astype(int)
     for i, num in enumerate(array):
-        if num != 0:
-            hot_position = int(np.log2(num))
-            hot_vectors[i][hot_position] = 1
-        else:
-            hot_vectors[i][0] = 1
+        logged = int(max(0, np.log2(num)))
+        hot_vectors[i][logged] = 1
     return hot_vectors.flatten()
 
 
@@ -30,6 +34,13 @@ class GameEnvironment(gym.Env):
         self.observation_space = spaces.MultiBinary((16 * 18))
         self.reward = 0
 
+    def reset(self):
+        # This is referenced outside of my code, so be careful.
+        self.game.__init__()
+        # reset everything
+        observation = prepare_array(self.game.grid.flatten())
+        return observation  # reward, done, info can't be included
+
     def step(self, action):
         """Action is int between 0 and 3"""
         self.game.move(action)
@@ -38,14 +49,6 @@ class GameEnvironment(gym.Env):
         self.done = self.game.is_terminated()
         info = {}
         return observation, self.reward, self.done, info
-
-    def reset(self):
-        self.done = False
-        self.game.__init__()
-        self.reward = 0
-        # reset everything
-        observation = prepare_array(self.game.grid.flatten())
-        return observation  # reward, done, info can't be included
 
     def render(self, mode="human"):
         pass

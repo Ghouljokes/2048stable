@@ -1,12 +1,18 @@
 """Contains defs for certain variables."""
 import numpy as np
+from stable_baselines3.a2c.a2c import A2C
+from stable_baselines3.ppo.ppo import PPO
+from stable_baselines3.dqn.dqn import DQN
 from selenium.webdriver.common.keys import Keys
 
 # CAN BE TWEAKED MID-TRAIN
 MAX_STUCK = 1  # how many invalid moves can be made in a row
 WRONG_MOVE_PUNISHMENT = -10
+TIMESTEP_INTERVAL = 25000
+MODEL = DQN  # technically. It doesn't alter current train, just moves to another.
 
 
+# CAN NOT BE TWEAKED MID-TRAIN
 # MISC, NOT TO BE CHANGED
 VALUES = {
     "tile-2": 2,
@@ -64,3 +70,4 @@ TRAVERSALS = np.array(
         [[0, 1, 2, 3], [0, 1, 2, 3]],
     ]
 )
+MODELS = {"A2C": A2C, "DQN": DQN, "PPO": PPO}

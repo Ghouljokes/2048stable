@@ -4,9 +4,9 @@ import argparse
 from stable_baselines3.a2c.a2c import A2C
 from stable_baselines3.ppo.ppo import PPO
 from stable_baselines3.dqn.dqn import DQN
-from rendergame import RenderGame
-from environment import GameEnvironment, prepare_array
-
+from environment import GameEnvironment
+from learn import show_game
+from defs import MODELS
 
 parser = argparse.ArgumentParser(description="Show ai replays.")
 
@@ -29,24 +29,6 @@ else:
     MODEL_NAME = "PPO"
 MODDIR = f"models/{MODEL_NAME}"
 env = GameEnvironment()
-env.reset()
-
-
-def show_game(ml_model):
-    """Show game based off current model."""
-    game = RenderGame()
-    stuck_counter = 0
-    observation = prepare_array(game.get_array())
-    while stuck_counter < 5 and not game.is_game_terminated():
-        direction = ml_model.predict(observation)[0]
-        game.move(direction)
-        new_observation = prepare_array(game.get_array())
-        if (new_observation == observation).all():
-            stuck_counter += 1
-        else:
-            stuck_counter = 0
-        observation = new_observation
-    game.quit()
 
 
 def play_all():

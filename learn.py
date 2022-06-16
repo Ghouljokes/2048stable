@@ -2,14 +2,13 @@
 
 import os
 import argparse
+import numpy as np
 from stable_baselines3.a2c.a2c import A2C
 from stable_baselines3.ppo.ppo import PPO
 from stable_baselines3.dqn.dqn import DQN
 from environment import GameEnvironment, prepare_array
 from rendergame import RenderGame
-
-
-MODELS = {"A2C": A2C, "DQN": DQN, "PPO": PPO}
+from defs import TIMESTEP_INTERVAL, MODELS, MODEL
 
 
 def get_dirs(model_name: str):
@@ -56,12 +55,11 @@ def initialize_model(model_name):
     """
     model_dir, logdir = get_dirs(model_name)
     env = GameEnvironment()
-    env.reset()
-    model_type = MODELS[model_name]
+    model_type = MODEL
     if os.listdir(model_dir):
         model_name = find_latest_model(model_dir)
         print(f"Loading {model_name}")
-        init_model = model_type.load(
+        model = MODEL.load(
             f"{model_dir}/{model_name}",
             env,
             verbose=1,
@@ -70,20 +68,19 @@ def initialize_model(model_name):
         timesteps = int(model_name.split(".")[0])
 
     else:
-        init_model = model_type("MlpPolicy", env, verbose=1, tensorboard_log=logdir)
+        model = MODEL("MlpPolicy", env, verbose=1, tensorboard_log=logdir)
         timesteps = 0
-    return init_model, timesteps
+    return model, timesteps
 
 
 # train a model
-def train_model(model: A2C | PPO | DQN, timesteps: int):
+def train_model(model: A2C | PPO | DQN):
     """Have a model run its learning algorithm.
 
     Args:
         model (Model): Model to train.
-        timesteps (int): Timesteps to train for.
     """
-    model.learn(total_timesteps=timesteps, reset_num_timesteps=False)
+    model.learn(total_timesteps=TIMESTEP_INTERVAL, reset_num_timesteps=False)
 
 
 def show_game(ml_model: A2C | PPO | DQN):
@@ -104,18 +101,15 @@ def show_game(ml_model: A2C | PPO | DQN):
 
 
 if __name__ == "__main__":
+    np.seterr(divide="ignore")
     parser = argparse.ArgumentParser(description="Program to train the ai.")
     parser.add_argument(
         "--showgame",
         help="Enables html replay each time a model is saved.",
         action="store_true",
     )
-    parser.add_argument(
-        "--a2c", help="Uses A2C for the model instead of PPO.", action="store_true"
-    )
-    parser.add_argument(
-        "--dqn", help="Uses DQN for the model instead of PPO.", action="store_true"
-    )
+    parser.add_argument("--a2c", help="Uses A2C model.", action="store_true")
+    parser.add_argument("--dqn", help="Uses DQN model.", action="store_true")
     args = parser.parse_args()
 
     if args.a2c:
@@ -126,9 +120,8 @@ if __name__ == "__main__":
         MODEL_NAME = "PPO"
 
     model, total_timesteps = initialize_model(MODEL_NAME)
-    TIMESTEP_INTERVAL = 25000
     while True:
-        train_model(model, TIMESTEP_INTERVAL)
+        train_model(model)
         total_timesteps += TIMESTEP_INTERVAL
         model.save(f"models/{MODEL_NAME}/{total_timesteps}")
         if args.showgame:
