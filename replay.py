@@ -1,32 +1,12 @@
 """Show model playing game in the html player."""
 import os
-import argparse
-from stable_baselines3.a2c.a2c import A2C
-from stable_baselines3.ppo.ppo import PPO
-from stable_baselines3.dqn.dqn import DQN
+from sb3_contrib.trpo.trpo import TRPO
+
 from environment import GameEnvironment
 from learn import show_game
-from defs import MODELS
 
-parser = argparse.ArgumentParser(description="Show ai replays.")
-
-parser.add_argument(
-    "--a2c", help="Uses A2C for the model instead of PPO.", action="store_true"
-)
-parser.add_argument(
-    "--dqn", help="Uses DQN for the model instead of PPO.", action="store_true"
-)
-args = parser.parse_args()
-
-if args.a2c:
-    ModelType = A2C
-    MODEL_NAME = "A2C"
-elif args.dqn:
-    ModelType = DQN
-    MODEL_NAME = "DQN"
-else:
-    ModelType = PPO
-    MODEL_NAME = "PPO"
+ModelType = TRPO
+MODEL_NAME = "TRPO"
 MODDIR = f"models/{MODEL_NAME}"
 env = GameEnvironment()
 

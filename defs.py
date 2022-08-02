@@ -6,9 +6,9 @@ from stable_baselines3.dqn.dqn import DQN
 from selenium.webdriver.common.keys import Keys
 
 # CAN BE TWEAKED MID-TRAIN
-MAX_STUCK = 1  # how many invalid moves can be made in a row
+MAX_STUCK = 5  # how many invalid moves can be made in a row
 WRONG_MOVE_PUNISHMENT = -10
-TIMESTEP_INTERVAL = 25000
+TIMESTEP_INTERVAL = 100000
 MODEL = DQN  # technically. It doesn't alter current train, just moves to another.
 
 

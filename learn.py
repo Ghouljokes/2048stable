@@ -3,12 +3,12 @@
 import os
 import argparse
 import numpy as np
-from stable_baselines3.a2c.a2c import A2C
-from stable_baselines3.ppo.ppo import PPO
-from stable_baselines3.dqn.dqn import DQN
+from sb3_contrib.trpo.trpo import TRPO
 from environment import GameEnvironment, prepare_array
 from rendergame import RenderGame
-from defs import TIMESTEP_INTERVAL, MODELS, MODEL
+from defs import TIMESTEP_INTERVAL, MAX_STUCK
+
+policy_kwargs = dict(net_arch=[128, 64, 64, 32, 8])
 
 
 def get_dirs(model_name: str):
@@ -55,11 +55,10 @@ def initialize_model(model_name):
     """
     model_dir, logdir = get_dirs(model_name)
     env = GameEnvironment()
-    model_type = MODEL
     if os.listdir(model_dir):
         model_name = find_latest_model(model_dir)
         print(f"Loading {model_name}")
-        model = MODEL.load(
+        model = TRPO.load(
             f"{model_dir}/{model_name}",
             env,
             verbose=1,
@@ -68,13 +67,19 @@ def initialize_model(model_name):
         timesteps = int(model_name.split(".")[0])
 
     else:
-        model = MODEL("MlpPolicy", env, verbose=1, tensorboard_log=logdir)
+        model = TRPO(
+            "MlpPolicy",
+            env,
+            verbose=1,
+            tensorboard_log=logdir,
+            policy_kwargs=policy_kwargs,
+        )
         timesteps = 0
     return model, timesteps
 
 
 # train a model
-def train_model(model: A2C | PPO | DQN):
+def train_model(model: TRPO):
     """Have a model run its learning algorithm.
 
     Args:
@@ -83,12 +88,12 @@ def train_model(model: A2C | PPO | DQN):
     model.learn(total_timesteps=TIMESTEP_INTERVAL, reset_num_timesteps=False)
 
 
-def show_game(ml_model: A2C | PPO | DQN):
+def show_game(ml_model: TRPO):
     """Show game based off current model."""
     game = RenderGame()
     stuck_counter = 0
     observation = prepare_array(game.get_array())
-    while stuck_counter < 5 and not game.is_terminated():
+    while stuck_counter < MAX_STUCK and not game.is_terminated():
         direction = ml_model.predict(observation)[0]
         game.move(direction)
         new_observation = prepare_array(game.get_array())
@@ -108,21 +113,13 @@ if __name__ == "__main__":
         help="Enables html replay each time a model is saved.",
         action="store_true",
     )
-    parser.add_argument("--a2c", help="Uses A2C model.", action="store_true")
-    parser.add_argument("--dqn", help="Uses DQN model.", action="store_true")
+
     args = parser.parse_args()
 
-    if args.a2c:
-        MODEL_NAME = "A2C"
-    elif args.dqn:
-        MODEL_NAME = "DQN"
-    else:
-        MODEL_NAME = "PPO"
-
-    model, total_timesteps = initialize_model(MODEL_NAME)
+    model, total_timesteps = initialize_model("TRPO")
     while True:
         train_model(model)
         total_timesteps += TIMESTEP_INTERVAL
-        model.save(f"models/{MODEL_NAME}/{total_timesteps}")
+        model.save(f"models/TRPO/{total_timesteps}")
         if args.showgame:
             show_game(model)
